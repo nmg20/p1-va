@@ -50,7 +50,14 @@ def filterImage(inImage, kernel):
   Aplica un filtro mediante convolución de un kernel sobre una imagen.
   - kernel = array/matriz de coeficientes
   """
-  return null
+  m, n = np.shape(inImage) # Tamaño de la imagen
+  p, q = np.shape(kernel) # Tamaño del kernel
+  outImage = np.zeros((m-((p//2)-1),n-((q//2)-1)), dtype='float32') # Img resultado de menor tamaño
+  for x in range(1, m-1, 1):
+    for y in range(1, n-1, 1):
+      window = inImage[(x-(p//2)):(x+p-(p//2)),(y-(q//2))::(y+q-(q//2))]
+      outImage[x,y] = np.sum(window * kernel)
+  return outImage
 
 def gaussKernel1D(sigma):
   """
@@ -156,6 +163,17 @@ def main():
   show(image)
   image2 = adjustIntensity(image, [0, 0.5], [0, 1])
   show(image2)
+
+  #####
+
+  #
+  #  Test de filterImage
+  #
+  show(image)
+  kernel = [[0,1,0],[1,1,1],[0,1,0]]
+  image2 = filterImage(image, kernel)
+  show(image2)
+
 
 if __name__ == "__main__":
   main()
