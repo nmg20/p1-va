@@ -52,11 +52,13 @@ def filterImage(inImage, kernel):
   """
   m, n = np.shape(inImage) # Tamaño de la imagen
   p, q = np.shape(kernel) # Tamaño del kernel
-  outImage = np.zeros((m-((p//2)-1),n-((q//2)-1)), dtype='float32') # Img resultado de menor tamaño
+  a = p // 2
+  b = q // 2
+  outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32') # Img resultado de menor tamaño
   for x in range(1, m-1, 1):
     for y in range(1, n-1, 1):
-      window = inImage[(x-(p//2)):(x+p-(p//2)),(y-(q//2))::(y+q-(q//2))]
-      outImage[x,y] = np.sum(window * kernel)
+      window = inImage[(x-a):(x+p-a),(y-b):(y+q-b)]
+      outImage[x,y] = (window * kernel).sum()
   return outImage
 
 def gaussKernel1D(sigma):
@@ -64,7 +66,12 @@ def gaussKernel1D(sigma):
   Genera un array/matriz de una dimensión con una distribución
   gaussiana en base a la sigma dada.
   - sigma = desviación típica
+  -> centro x=0 de la Gaussiana está en floor(N/2)+1
+  -> N = 2*ceil(3*sigma)+1
   """
+  n = 2 * math.ceil(3*sigma)+1
+  centro = math.floor(n/2)+1
+  kernel = np.zeros((1,n), dtype='float32')
   return null
 
 def gaussianFilter(inImage, sigma):
