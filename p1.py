@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import math
 
 # Funciones auxiliares
 
@@ -70,9 +71,20 @@ def gaussKernel1D(sigma):
   -> N = 2*ceil(3*sigma)+1
   """
   n = 2 * math.ceil(3*sigma)+1
-  centro = math.floor(n/2)+1
+  # centro = math.floor(n//2)+1
+  centro = math.floor(n//2)
   kernel = np.zeros((1,n), dtype='float32')
-  return null
+  print("N: ",n,"\nCentro: ",centro,"\n\n")
+  div = 1/math.sqrt(2*math.pi*sigma)
+  exp = 2 * sigma**2
+  print("Div: ",div,"\n\n")
+  # for x in range(0,n):
+  #   kernel[0,x] = div * math.exp(-x**2/exp)
+  for x in range(-centro,centro+1):
+    kernel[0,x+centro] = div * math.exp(-x**2/exp)
+
+  print("Kernel: ",kernel)
+  # return null
 
 def gaussianFilter(inImage, sigma):
   """
@@ -163,23 +175,30 @@ def cornerHarris(inImage, sigmaD, sigmaI, t):
 
 
 def main():
+  image = read_img("./prueba/circles.png")
+
   #
   #  Test de adjustIntensity
   #
-  image = read_img("./prueba/circles.png")
-  show(image)
-  image2 = adjustIntensity(image, [0, 0.5], [0, 1])
-  show(image2)
+  # show(image)
+  # image2 = adjustIntensity(image, [0, 0.5], [0, 1])
+  # show(image2)
 
   #####
 
   #
   #  Test de filterImage
   #
-  show(image)
-  kernel = [[0,1,0],[1,1,1],[0,1,0]]
-  image2 = filterImage(image, kernel)
-  show(image2)
+  # show(image)
+  # kernel = [[0,1,0],[1,1,1],[0,1,0]]
+  # image2 = filterImage(image, kernel)
+  # show(image2)
+
+  #
+  # Test de gaussKernel1D
+  #
+  # show(image)
+  gaussKernel1D(0.5)
 
 
 if __name__ == "__main__":
