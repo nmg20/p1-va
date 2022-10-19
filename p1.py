@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 import math
+import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
 
 # Funciones auxiliares
 
@@ -16,6 +17,17 @@ def show(image):
   Muestra la imagen proporcionada por pantalla.
   """
   cv.imshow("", image)
+  cv.waitKey(0)
+  cv.destroyAllWindows()
+
+def show2(img1, img2):
+  height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
+  if (width>300):
+    img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
+    img2 = imutils.resize(img2,width=300)
+  print("Height: ",height,"\tWidth: ",width)
+  pack = np.concatenate((img1, img2), axis=1)
+  cv.imshow("", pack)
   cv.waitKey(0)
   cv.destroyAllWindows()
 
@@ -74,17 +86,17 @@ def gaussKernel1D(sigma):
   # centro = math.floor(n//2)+1
   centro = math.floor(n//2)
   kernel = np.zeros((1,n), dtype='float32')
-  print("N: ",n,"\nCentro: ",centro,"\n\n")
+  # print("N: ",n,"\nCentro: ",centro,"\n\n")
   div = 1/math.sqrt(2*math.pi*sigma)
   exp = 2 * sigma**2
-  print("Div: ",div,"\n\n")
+  # print("Div: ",div,"\n\n")
   # for x in range(0,n):
   #   kernel[0,x] = div * math.exp(-x**2/exp)
   for x in range(-centro,centro+1):
     kernel[0,x+centro] = div * math.exp(-x**2/exp)
 
-  print("Kernel: ",kernel)
-  # return null
+  # print("Kernel: ",kernel)
+  return kernel
 
 def gaussianFilter(inImage, sigma):
   """
@@ -190,15 +202,20 @@ def main():
   #  Test de filterImage
   #
   # show(image)
-  # kernel = [[0,1,0],[1,1,1],[0,1,0]]
-  # image2 = filterImage(image, kernel)
-  # show(image2)
+  kernel = [[0,1,0],[1,1,1],[0,1,0]]
+  image2 = filterImage(image, kernel)
+  show2(image,image2)
 
   #
   # Test de gaussKernel1D
   #
   # show(image)
-  gaussKernel1D(0.5)
+  # kernel1 = gaussKernel1D(0.5)
+  # matrix = kernel1 * kernel1.T
+  # print("Matriz: \n",matrix)
+  # show(image)
+  # image2 = filterImage(image, matrix)
+  # show(image2)
 
 
 if __name__ == "__main__":
