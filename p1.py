@@ -3,6 +3,12 @@ import cv2 as cv
 import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
 
+# Dudas:
+# - EqualizeIntensity -> usar numpy.hist o algo asi
+# - FilterImage -> Omitir bordes o añadir padding?
+# - GaussFilter1D -> 0 a N o -centro a centro?
+#
+
 # Funciones auxiliares
 
 def read_img(path):
