@@ -64,20 +64,37 @@ def equalizeIntensity(inImage, nBins=256):
 
 # Filtrado espacial: suavizado y realce
 
+# def filterImage(inImage, kernel):
+#   """
+#   Aplica un filtro mediante convolución de un kernel sobre una imagen.
+#   - kernel = array/matriz de coeficientes
+#   """
+#   m, n = np.shape(inImage) # Tamaño de la imagen
+#   p, q = np.shape(kernel) # Tamaño del kernel
+#   a = p // 2
+#   b = q // 2
+#   outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32') # Img resultado de menor tamaño
+#   for x in range(a, m-a, 1):
+#     for y in range(b, n-b, 1):
+#       window = inImage[(x-a):(x+p-a),(y-b):(y+q-b)]
+#       print("\nPOSICIÓN: (",x,",",y,")")
+#       print("\tWindow limits \t(",(x-a),"---",(x+p-a),")\n\t\t\t(",(y-b),"---",(y+q-b),")")
+#       # if (window != []) :
+#       #   print("Window: ",window)
+#       outImage[x,y] = (window * kernel).sum()
+#   return outImage
+
 def filterImage(inImage, kernel):
-  """
-  Aplica un filtro mediante convolución de un kernel sobre una imagen.
-  - kernel = array/matriz de coeficientes
-  """
-  m, n = np.shape(inImage) # Tamaño de la imagen
-  p, q = np.shape(kernel) # Tamaño del kernel
+  m, n = np.shape(inImage)
+  p, q = np.shape(kernel)
   a = p // 2
   b = q // 2
-  outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32') # Img resultado de menor tamaño
-  for x in range(1, m-1, 1):
-    for y in range(1, n-1, 1):
-      window = inImage[(x-a):(x+p-a),(y-b):(y+q-b)]
-      outImage[x,y] = (window * kernel).sum()
+  outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32')
+  for x in range(a, m-a, 1):
+    for y in range(b, n-b, 1):
+      window = inImage[max(0,(x-a)):min(m,(x+p-a)),max(0,(y-b)):min(n,(y+q-b))]
+      outImage[x,y] = np.sum(window * kernel)/(p*q)
+      print("OUTPUT(x,y): ",outImage[x,y])
   return outImage
 
 def gaussKernel1D(sigma):
@@ -101,7 +118,7 @@ def gaussKernel1D(sigma):
   for x in range(-centro,centro+1):
     kernel[0,x+centro] = div * math.exp(-x**2/exp)
 
-  # print("Kernel: ",kernel)
+  print("Kernel: ",kernel)
   return kernel
 
 def gaussianFilter(inImage, sigma):
@@ -115,7 +132,10 @@ def gaussianFilter(inImage, sigma):
     -> Multiplicar un kernel gaussiano 1xN por su matriz transpuesta
     -> Aplicar filterImage con la matriz anterior como kernel del filtro.
   """
-  return null
+  kernel = gaussKernel1D(sigma)  
+  matrix = kernel * kernel.T
+  outImage = filterImage(inImage, matrix)
+  return outImage
 
 def medianFilter(inImage, filterSize):
   """
@@ -193,7 +213,10 @@ def cornerHarris(inImage, sigmaD, sigmaI, t):
 
 
 def main():
-  image = read_img("./prueba/circles.png")
+  # image = read_img("./prueba/circles.png")
+  # image = read_img("./prueba/77.png")
+  # image = read_img("./prueba/blob55.png")
+  image = read_img("./prueba/point55.png")
 
   #
   #  Test de adjustIntensity
@@ -207,10 +230,12 @@ def main():
   #
   #  Test de filterImage
   #
-  # show(image)
-  kernel = [[0,1,0],[1,1,1],[0,1,0]]
+  show(image)
+  # kernel = [[0,1,0],[1,1,1],[0,1,0]]
+  kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]]
   image2 = filterImage(image, kernel)
-  show2(image,image2)
+  # show2(image,image2)
+  show(image2)
 
   #
   # Test de gaussKernel1D
@@ -221,6 +246,13 @@ def main():
   # print("Matriz: \n",matrix)
   # show(image)
   # image2 = filterImage(image, matrix)
+  # show(image2)
+
+  #
+  # Test de gaussianFilter
+  #
+  # show(image)
+  # image2 = gaussianFilter(image, 0.5)
   # show(image2)
 
 
