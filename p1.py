@@ -218,13 +218,13 @@ def main():
   #
   #  Test de filterImage
   #
-  show(image)
-  kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
+  # show(image)
+  # kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
   # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]] # Oscurece la imagen
   # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]] # Aclara la imagen
-  image2 = filterImage(image, kernel)
+  # image2 = filterImage(image, kernel)
   # show2(image,image2)
-  show(image2)
+  # show(image2)
 
   #
   # Test de gaussKernel1D
@@ -240,9 +240,9 @@ def main():
   #
   # Test de gaussianFilter
   #
-  # show(image)
-  # image2 = gaussianFilter(image, 0.5)
-  # show(image2)
+  show(image)
+  image2 = gaussianFilter(image, 0.5)
+  show(image2)
 
 
 if __name__ == "__main__":
