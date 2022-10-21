@@ -64,37 +64,23 @@ def equalizeIntensity(inImage, nBins=256):
 
 # Filtrado espacial: suavizado y realce
 
-# def filterImage(inImage, kernel):
-#   """
-#   Aplica un filtro mediante convolución de un kernel sobre una imagen.
-#   - kernel = array/matriz de coeficientes
-#   """
-#   m, n = np.shape(inImage) # Tamaño de la imagen
-#   p, q = np.shape(kernel) # Tamaño del kernel
-#   a = p // 2
-#   b = q // 2
-#   outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32') # Img resultado de menor tamaño
-#   for x in range(a, m-a, 1):
-#     for y in range(b, n-b, 1):
-#       window = inImage[(x-a):(x+p-a),(y-b):(y+q-b)]
-#       print("\nPOSICIÓN: (",x,",",y,")")
-#       print("\tWindow limits \t(",(x-a),"---",(x+p-a),")\n\t\t\t(",(y-b),"---",(y+q-b),")")
-#       # if (window != []) :
-#       #   print("Window: ",window)
-#       outImage[x,y] = (window * kernel).sum()
-#   return outImage
-
 def filterImage(inImage, kernel):
-  m, n = np.shape(inImage)
-  p, q = np.shape(kernel)
+  """
+  Aplica un filtro mediante convolución de un kernel sobre una imagen.
+  - kernel = array/matriz de coeficientes
+  """
+  m, n = np.shape(inImage) # Tamaño de la imagen
+  p, q = np.shape(kernel) # Tamaño del kernel
   a = p // 2
   b = q // 2
-  outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32')
+  outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32') # Img resultado de menor tamaño
   for x in range(a, m-a, 1):
     for y in range(b, n-b, 1):
-      window = inImage[max(0,(x-a)):min(m,(x+p-a)),max(0,(y-b)):min(n,(y+q-b))]
-      outImage[x,y] = np.sum(window * kernel)/(p*q)
-      print("OUTPUT(x,y): ",outImage[x,y])
+      window = inImage[(x-a):(x+p-a),(y-b):(y+q-b)]
+      outImage[x,y] = (window * kernel).sum()/(np.sum(kernel))
+    #   print(outImage[x,y], end="  ")
+    # print("\n")
+      
   return outImage
 
 def gaussKernel1D(sigma):
@@ -213,10 +199,12 @@ def cornerHarris(inImage, sigmaD, sigmaI, t):
 
 
 def main():
-  # image = read_img("./prueba/circles.png")
-  # image = read_img("./prueba/77.png")
-  # image = read_img("./prueba/blob55.png")
-  image = read_img("./prueba/point55.png")
+  # image = read_img("./imagenes/circles.png")
+  image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/77.png")
+  # image = read_img("./imagenes/blob55.png")
+  # image = read_img("./imagenes/point55.png")
+  # image = read_img("./imagenes/x55.png")
 
   #
   #  Test de adjustIntensity
@@ -231,8 +219,9 @@ def main():
   #  Test de filterImage
   #
   show(image)
-  # kernel = [[0,1,0],[1,1,1],[0,1,0]]
-  kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]]
+  kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
+  # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]] # Oscurece la imagen
+  # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]] # Aclara la imagen
   image2 = filterImage(image, kernel)
   # show2(image,image2)
   show(image2)
