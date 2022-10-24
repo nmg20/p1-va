@@ -22,7 +22,6 @@ def show(image):
   """
   Muestra la imagen proporcionada por pantalla.
   """
-  # height, width = image.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
   if (image.shape[1]>300):
     image = imutils.resize(image,width=300) #Resize proporcional sólo para mostrar las imágenes
   cv.imshow("", image)
@@ -107,7 +106,7 @@ def gaussKernel1D(sigma): # [1]
   #   kernel[0,x] = div * math.exp(-x**2/exp)
   for x in range(-centro,centro+1):
     kernel[0,x+centro] = div * math.exp(-x**2/exp)
-  print("Kernel: ",kernel)
+  # print("Kernel: ",kernel)
   return kernel
 
 def gaussianFilter(inImage, sigma): # [1]
@@ -150,7 +149,18 @@ def highBoost(inImage, A, method, param):
   - param: valor del parámetro del filtro de suavizado.
     -> sigma para gaussiano y size para medianas.
   """
-  return null
+  m, n = np.shape(inImage)
+  realzado = np.zeros((m,n), dtype='float32')
+  if method=='gaussian':
+    suavizado = gaussianFilter(inImage, param)
+  elif method=='median':
+    suavizado = medianFilter(inImage, param)
+  
+  for x in range(0,m-1,1):
+    for y in range(0,n-1,1):
+        realzado[x,y] = A*inImage[x,y]-suavizado[x,y]
+  return realzado
+  # return A*realzado-suavizado
 
 # Operadores morfológicos
 
@@ -209,12 +219,13 @@ def cornerHarris(inImage, sigmaD, sigmaI, t):
 
 
 def main():
-  image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/circles.png")
+  image = read_img("./imagenes/circles1.png")
   # image = read_img("./imagenes/77.png")
   # image = read_img("./imagenes/blob55.png")
   # image = read_img("./imagenes/point55.png")
   # image = read_img("./imagenes/x55.png")
+  # image = read_img("./imagenes/salt77.png")
 
   #
   #  Test de adjustIntensity
@@ -230,13 +241,13 @@ def main():
   #
   # show(image)
   # kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
-  kernel = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
-    [1,1,1,1,1],[1,1,1,1,1]]
+  # kernel = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
+    # [1,1,1,1,1],[1,1,1,1,1]]
   # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]] # Oscurece la imagen
   # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]] # Aclara la imagen
-  image2 = filterImage(image, kernel)
+  # image2 = filterImage(image, kernel)
   # show(image2)
-  show2(image,image2)
+  # show2(image,image2)
 
   #
   # Test de gaussKernel1D
@@ -260,9 +271,15 @@ def main():
   # Test de medanFilter
   #
   # show(image)
-  # image2 = medianFilter(image, 4)
+  # image2 = medianFilter(image, 3)
   # show(image2)
 
+  #
+  # Test de medanFilter
+  #
+  show(image)
+  image2 = highBoost(image, 0.5, 'gaussian', 0.5)
+  show(image2)
 
 if __name__ == "__main__":
   main()
