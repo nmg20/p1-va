@@ -26,13 +26,9 @@ def show(image):
   cv.waitKey(0)
   cv.destroyAllWindows()
 
-#
+####### Versión in bordes #######
 
-def filterImage(inImage, kernel):
-  """
-  Aplica un filtro mediante convolución de un kernel sobre una imagen.
-  - kernel = array/matriz de coeficientes
-  """
+def filterB(inImage, kernel):
   m, n = np.shape(inImage) # Tamaño de la imagen
   p, q = np.shape(kernel) # Tamaño del kernel
   a = p // 2
@@ -47,22 +43,39 @@ def filterImage(inImage, kernel):
       
   return outImage
 
+####### Versión con padding ######
+
+def filterP(inImage, kernel):
+  m, n = np.shape(inImage) # Tamaño de la imagen
+  p, q = np.shape(kernel) # Tamaño del kernel
+  a = p // 2
+  b = q // 2
+  outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32') # Img resultado de menor tamaño
+  img = cv.copyMakeBorder(inImage,a,a,b,b,cv.BORDER_CONSTANT)
+  for x in range(a, m-a, 1):
+    for y in range(b, n-b, 1):
+      window = inImage[(x-a):(x+p-a),(y-b):(y+q-b)]
+      outImage[x,y] = (window * kernel).sum()
+  return outImage
+
 #####
 
 def main():
-  # image = read_img("../prueba/circles.png")
-  image = read_img("../prueba/circles1.png")
-  # image = read_img("../prueba/77.png")
-  # image = read_img("../prueba/blob55.png")
-  # image = read_img("../prueba/point55.png")
-  # image = read_img("../prueba/x55.png")
-  # image = read_img("../prueba/white_dot55.png")
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/77.png")
+  # image = read_img("./imagenes/blob55.png")
+  # image = read_img("./imagenes/point55.png")
+  # image = read_img("./imagenes/x55.png")
+  # image = read_img("./imagenes/salt77.png")
+  image = read_img("./imagenes/salt99.png")
 
   show(image)
   # kernel = [[0,1,0],[1,1,1],[0,1,0]]
   kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]]
   # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]]
-  image2 = filterImage(image, kernel)
+  image2 = filterB(image, kernel)
+  image2 = filterP(image, kernel)
   show(image2)
 
 if __name__ == "__main__":

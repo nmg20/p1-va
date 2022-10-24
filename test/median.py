@@ -51,10 +51,11 @@ def main():
   # image = read_img("./imagenes/blob55.png")
   # image = read_img("./imagenes/point55.png")
   # image = read_img("./imagenes/x55.png")
-  image = read_img("./imagenes/salt77.png")
+  # image = read_img("./imagenes/salt77.png")
+  image = read_img("./imagenes/salt99.png")
 
   show(image)
-  image2 = medianFilter(image, 5)
+  image2 = medianFilter(image, 3)
   show(image2)
 
 if __name__ == "__main__":
