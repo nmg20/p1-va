@@ -15,6 +15,20 @@ def show(image):
   cv.waitKey(0)
   cv.destroyAllWindows()
 
+def show2(img1, img2):
+  """
+  Muestra dos imágenes una al lado de otra.
+  """
+  height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
+  if (width>300):
+    img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
+    img2 = imutils.resize(img2,width=300)
+  # print("Height: ",height,"\tWidth: ",width)
+  pack = np.concatenate((img1, img2), axis=1)
+  cv.imshow("", pack)
+  cv.waitKey(0)
+  cv.destroyAllWindows()
+
 ####### Versión in bordes #######
 
 def filterB(inImage, kernel):
@@ -61,12 +75,13 @@ def main():
   # image = read_img("./imagenes/salt99.png")
 
   # kernel = [[0,1,0],[1,1,1],[0,1,0]]
-  kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]]
-  # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]]
+  # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]]
+  kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]]
   # image2 = filterB(image, kernel)
   image2 = filterP(image, kernel)
-  show(image)
-  show(image2)
+  # show(image)
+  # show(image2)
+  show2(image,image2)
 
 if __name__ == "__main__":
   main()
