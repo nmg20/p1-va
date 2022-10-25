@@ -32,7 +32,6 @@ def medianFilter(inImage, filterSize):
   m, n = np.shape(inImage)
   outImage = np.zeros((m,n), dtype='float32')
   centro = filterSize//2
-  # padded = cv.copyMakeBorder(inImage,centro,centro,centro,centro,cv.BORDER_CONSTANT)
   for x in range(m):
     for y in range(n):
       limizq = max(0,y-centro)
@@ -64,7 +63,7 @@ def main():
   image = read_img("./imagenes/saltgirl.png")
 
   # show(image)
-  image2 = medianFilter(image, 5)
+  image2 = medianFilter(image, 3)
   # show(image)
   # show(image2)
   show2(image, image2)

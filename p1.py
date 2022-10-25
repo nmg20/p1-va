@@ -5,9 +5,9 @@ import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de l
 
 # Dudas:
 # - EqualizeIntensity -> usar numpy.hist o algo asi
-# - FilterImage -> Omitir bordes o añadir padding?
 # - GaussFilter1D -> 0 a N o -centro a centro?
-#
+# - HighBoost -> adjustIntensity con A?
+#             -> median elimina ruido impulsional pero en highBoost no
 
 # Funciones auxiliares
 
@@ -132,17 +132,20 @@ def gaussianFilter(inImage, sigma): # [1]
   return outImage
 
 def medianFilter(inImage, filterSize):
+  """
+  Suaviza una imagen mediante un filtro de medianas bidimensional. 
+  El tamaño del kernel del filtro viene dado por filterSize.
+  """
   m, n = np.shape(inImage)
   outImage = np.zeros((m,n), dtype='float32')
   centro = filterSize//2
   for x in range(m):
     for y in range(n):
-      limizq = max(0,x-centro)
-      limder = min(m,x+centro)
-      limar = max(0,y-centro)
-      limab = min(n,y+centro)
-      window = inImage[limizq:limder,limar:limab]
-      # outImage[x-centro,y-centro] = np.sum(window)/(len(window)*len(window[0]))
+      limizq = max(0,y-centro)
+      limder = min(n,y+filterSize-centro)
+      limar = max(0,x-centro)
+      limab = min(m,x+filterSize-centro)
+      window = inImage[limar:limab,limizq:limder]
       outImage[x,y] = np.median(window)
   return outImage
 
@@ -166,7 +169,7 @@ def highBoost(inImage, A, method, param):
   for x in range(0,m-1,1):
     for y in range(0,n-1,1):
         realzado[x,y] = A*inImage[x,y]-suavizado[x,y]
-  realzado = adjustIntensity(realzado, [], [0,1])
+  # realzado = adjustIntensity(realzado, [], [0,1])
   return realzado
   # return adjustIntensity((A*inImage-suavizado),[],[0,1])
 
@@ -234,7 +237,9 @@ def main():
   # image = read_img("./imagenes/point55.png")
   # image = read_img("./imagenes/x55.png")
   # image = read_img("./imagenes/salt77.png")
-  image = read_img("./imagenes/salt99.png")
+  # image = read_img("./imagenes/salt99.png")
+  image = read_img("./imagenes/saltgirl.png")
+
   #
   #  Test de adjustIntensity
   #
@@ -281,17 +286,19 @@ def main():
   #
   # Test de medanFilter
   #
-  # image2 = medianFilter(image, 3)
+  # image2 = medianFilter(image, 5)
   # show(image)
   # show(image2)
+  # show2(image, image2)
 
   #
   # Test de medanFilter
   #
-  # image2 = highBoost(image, 1, 'gaussian', 1.5)
-  image2 = highBoost(image, 2, 'median', 3)
-  show(image)
-  show(image2)
+  # image2 = highBoost(image, 2, 'gaussian', 1)
+  image2 = highBoost(image, 2, 'median', 7)
+  # show(image)
+  # show(image2)
+  show2(image, image2)
 
 if __name__ == "__main__":
   main()
