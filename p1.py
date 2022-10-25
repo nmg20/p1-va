@@ -29,6 +29,9 @@ def show(image):
   cv.destroyAllWindows()
 
 def show2(img1, img2):
+  """
+  Muestra dos imágenes una al lado de otra.
+  """
   height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
   if (width>300):
     img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
@@ -75,15 +78,13 @@ def filterImage(inImage, kernel): # [2]
   p, q = np.shape(kernel) # Tamaño del kernel
   a = p // 2
   b = q // 2
-  outImage = np.zeros((m-(a-1),n-(b-1)), dtype='float32') # Img resultado de menor tamaño
-  # Como la convolucion da 0 en los bordes, se omiten
-  for x in range(a, m-a, 1):
-    for y in range(b, n-b, 1):
-      window = inImage[(x-a):(x+p-a),(y-b):(y+q-b)]
-      outImage[x,y] = (window * kernel).sum()/(np.sum(kernel))
-    #   print(outImage[x,y], end="  ")
-    # print("\n")
-      
+  outImage = np.zeros((m,n), dtype='float32') # Img resultado de menor tamaño
+  padded = cv.copyMakeBorder(inImage,a,a,b,b,cv.BORDER_CONSTANT)
+  for x in range(a, m+a, 1):
+    for y in range(b, n+b, 1):
+      window = padded[(x-a):(x+p-a),(y-b):(y+q-b)]
+      # print("Window:\t(",x-a,"---",x+p-a,")\n\t(",y-b,"---",y+q-b)
+      outImage[x-a,y-b] = (window * kernel).sum()
   return outImage
 
 def gaussKernel1D(sigma): # [1]
@@ -242,7 +243,9 @@ def main():
   # show(image)
   # kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
   # kernel = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
-    # [1,1,1,1,1],[1,1,1,1,1]]
+  #   [1,1,1,1,1],[1,1,1,1,1]]
+  # kernel = [[0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5],
+  #   [0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5]]
   # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]] # Oscurece la imagen
   # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]] # Aclara la imagen
   # image2 = filterImage(image, kernel)
@@ -264,8 +267,9 @@ def main():
   # Test de gaussianFilter
   #
   # show(image)
-  # image2 = gaussianFilter(image, 0.5)
+  # image2 = gaussianFilter(image, 1)
   # show(image2)
+  # show2(image,image2)
 
   #
   # Test de medanFilter
@@ -277,9 +281,9 @@ def main():
   #
   # Test de medanFilter
   #
-  show(image)
-  image2 = highBoost(image, 0.5, 'gaussian', 0.5)
-  show(image2)
+  # show(image)
+  # image2 = highBoost(image, 0.5, 'gaussian', 0.5)
+  # show(image2)
 
 if __name__ == "__main__":
   main()
