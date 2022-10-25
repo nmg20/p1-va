@@ -44,7 +44,7 @@ def show2(img1, img2):
 
 # Histogramas: mejora de contraste
 
-def adjustIntensity(inImage, inRange=[], outRange=[0, 1]): # [1]
+def adjustIntensity(inImage, inRange=[], outRange=[0, 1]): # [2]
   """
   Altera el rango dinámico de la imagen.
   - inRange = Rango de valores de intensidad de entrada.
@@ -58,6 +58,7 @@ def adjustIntensity(inImage, inRange=[], outRange=[0, 1]): # [1]
     max_in = inRange[1]
   min_out = outRange[0]
   max_out = outRange[1]
+  # print("MinIn: ",min_in,"\tMaxIn: ",max_in,"\n\tMinOut: ",min_out,"\tMaxOut: ",max_out)
   return min_out + (((max_out - min_out)*inImage - min_in)/(max_in - min_in))
 
 def equalizeIntensity(inImage, nBins=256):  # [0]
@@ -65,6 +66,10 @@ def equalizeIntensity(inImage, nBins=256):  # [0]
   Ecualiza el histograma de la imagen.
   - nBins = número de bins empleados en el procesamiento.
   """
+  m, n = np.shape(inImage)
+  outImage = np.zeros((m,n), dtype='float32')
+  histograma = np.zeros(nBins) # Array de zeros de tamaño nBins (se llena con los valores de las intensidades)
+  bins = np.linspace(np.min(inImage), np.max(inImage), nBins) # Se crea un array que va desde la instensidad más baja a la mayor en nBins steps
   return null
 
 # Filtrado espacial: suavizado y realce
@@ -126,18 +131,19 @@ def gaussianFilter(inImage, sigma): # [1]
   outImage = filterImage(inImage, matrix)
   return outImage
 
-def medianFilter(inImage, filterSize): # [1]
-  """
-  Suaviza una imagen mediante un filtro de medianas bidimensional. 
-  El tamaño del kernel del filtro viene dado por filterSize.
-  """
+def medianFilter(inImage, filterSize):
   m, n = np.shape(inImage)
-  outImage = inImage # Se usa la imagen original para evitar bordes en negro
+  outImage = np.zeros((m,n), dtype='float32')
   centro = filterSize//2
-  for x in range(centro,m-centro,1): # Tomamos sólo las regiones del kernel que caen dentro de la imagen
-    for y in range(centro,n-centro,1):
-      window = inImage[(x-centro)::(x+centro),(y-centro)::(y+centro)]
-      outImage[x,y] = np.sum(window)/(len(window)*len(window[0]))
+  for x in range(m):
+    for y in range(n):
+      limizq = max(0,x-centro)
+      limder = min(m,x+centro)
+      limar = max(0,y-centro)
+      limab = min(n,y+centro)
+      window = inImage[limizq:limder,limar:limab]
+      # outImage[x-centro,y-centro] = np.sum(window)/(len(window)*len(window[0]))
+      outImage[x,y] = np.median(window)
   return outImage
 
 def highBoost(inImage, A, method, param):
@@ -160,8 +166,9 @@ def highBoost(inImage, A, method, param):
   for x in range(0,m-1,1):
     for y in range(0,n-1,1):
         realzado[x,y] = A*inImage[x,y]-suavizado[x,y]
+  realzado = adjustIntensity(realzado, [], [0,1])
   return realzado
-  # return A*realzado-suavizado
+  # return adjustIntensity((A*inImage-suavizado),[],[0,1])
 
 # Operadores morfológicos
 
@@ -221,13 +228,13 @@ def cornerHarris(inImage, sigmaD, sigmaI, t):
 
 def main():
   # image = read_img("./imagenes/circles.png")
-  image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/circles1.png")
   # image = read_img("./imagenes/77.png")
   # image = read_img("./imagenes/blob55.png")
   # image = read_img("./imagenes/point55.png")
   # image = read_img("./imagenes/x55.png")
   # image = read_img("./imagenes/salt77.png")
-
+  image = read_img("./imagenes/salt99.png")
   #
   #  Test de adjustIntensity
   #
@@ -266,24 +273,25 @@ def main():
   #
   # Test de gaussianFilter
   #
-  # show(image)
   # image2 = gaussianFilter(image, 1)
+  # show(image)
   # show(image2)
   # show2(image,image2)
 
   #
   # Test de medanFilter
   #
-  # show(image)
   # image2 = medianFilter(image, 3)
+  # show(image)
   # show(image2)
 
   #
   # Test de medanFilter
   #
-  # show(image)
-  # image2 = highBoost(image, 0.5, 'gaussian', 0.5)
-  # show(image2)
+  # image2 = highBoost(image, 1, 'gaussian', 1.5)
+  image2 = highBoost(image, 2, 'median', 3)
+  show(image)
+  show(image2)
 
 if __name__ == "__main__":
   main()

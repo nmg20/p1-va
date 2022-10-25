@@ -35,13 +35,18 @@ def medianFilter(inImage, filterSize):
   # padded = cv.copyMakeBorder(inImage,centro,centro,centro,centro,cv.BORDER_CONSTANT)
   for x in range(m):
     for y in range(n):
-      limizq = max(0,x-centro)
-      limder = min(m,x+centro)
-      limar = max(0,y-centro)
-      limab = min(n,y+centro)
-      window = inImage[limizq::limder,limar::limab]
-      # outImage[x-centro,y-centro] = np.sum(window)/(len(window)*len(window[0]))
-      outImage[x-centro,y-centro] = np.median(window)
+      limizq = max(0,y-centro)
+      limder = min(n,y+filterSize-centro)
+      limar = max(0,x-centro)
+      limab = min(m,x+filterSize-centro)
+      window = inImage[limar:limab,limizq:limder]
+      # outImage[x,y] = np.sum(window)/(len(window)*len(window[0]))
+      outImage[x,y] = np.median(window)
+      # print("---------------------")
+      # print("Posición: (",x,",",y,"): ",outImage[x-centro,y-centro])
+      # # print("\t",limar,"\n",limizq,"\t\t",limder,"\n\t",limab)
+      # print("Límites:\n\t(",limizq,",",limar,")------(",limder,",",limar,")")
+      # print("\t|\t\t\t|\n\t(",limizq,",",limab,")-------(",limder,",",limab,")")
   return outImage
 
 #####
@@ -50,12 +55,16 @@ def main():
   # image = read_img("./imagenes/circles.png")
   # image = read_img("./imagenes/circles1.png")
   # image = read_img("./imagenes/x55.png")
+  # image = read_img("./imagenes/white55.png")
+  # image = read_img("./imagenes/r44.png")
+  # image = read_img("./imagenes/cosa55.png")
   # image = read_img("./imagenes/salt77.png")
   # image = read_img("./imagenes/salt99.png")
-  image = read_img("./imagenes/salt11.png")
+  # image = read_img("./imagenes/salt11.png")
+  image = read_img("./imagenes/saltgirl.png")
 
   # show(image)
-  image2 = medianFilter(image, 4)
+  image2 = medianFilter(image, 5)
   # show(image)
   # show(image2)
   show2(image, image2)
