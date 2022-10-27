@@ -7,7 +7,7 @@ import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de l
 # - EqualizeIntensity -> usar numpy.hist o algo asi
 # - GaussFilter1D -> 0 a N o -centro a centro?
 # - HighBoost -> adjustIntensity con A?
-#             -> median elimina ruido impulsional pero en highBoost no
+#             
 
 # Funciones auxiliares
 
@@ -70,7 +70,15 @@ def equalizeIntensity(inImage, nBins=256):  # [0]
   outImage = np.zeros((m,n), dtype='float32')
   histograma = np.zeros(nBins) # Array de zeros de tamaño nBins (se llena con los valores de las intensidades)
   bins = np.linspace(np.min(inImage), np.max(inImage), nBins) # Se crea un array que va desde la instensidad más baja a la mayor en nBins steps
-  return null
+  for x in np.nditer(inImage):
+    i=0
+    while x<=bins[i]:
+      i=i+1
+    histograma[i]=histograma[i]+1
+  histAcum = histograma.cumsum()
+  outImage = np.interp(inImage, bins[:-1], histAcum)
+
+  return outImage
 
 # Filtrado espacial: suavizado y realce
 
@@ -243,16 +251,20 @@ def main():
   #
   #  Test de adjustIntensity
   #
-  # show(image)
   # image2 = adjustIntensity(image, [0, 0.5], [0, 1])
-  # show(image2)
+  # show2(image,image2)
+
+  #
+  #  Test de equalizeIntensity
+  
+  # image2 = equalizeIntensity(image, 256)
+  show2(image,image2)
 
   #####
 
   #
   #  Test de filterImage
   #
-  # show(image)
   # kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
   # kernel = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
   #   [1,1,1,1,1],[1,1,1,1,1]]
@@ -261,44 +273,35 @@ def main():
   # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]] # Oscurece la imagen
   # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]] # Aclara la imagen
   # image2 = filterImage(image, kernel)
-  # show(image2)
   # show2(image,image2)
 
   #
   # Test de gaussKernel1D
   #
-  # show(image)
   # kernel1 = gaussKernel1D(0.5)
   # matrix = kernel1 * kernel1.T
   # print("Matriz: \n",matrix)
-  # show(image)
   # image2 = filterImage(image, matrix)
-  # show(image2)
+  # show2(image,image2)
 
   #
   # Test de gaussianFilter
   #
   # image2 = gaussianFilter(image, 1)
-  # show(image)
-  # show(image2)
   # show2(image,image2)
 
   #
   # Test de medanFilter
   #
   # image2 = medianFilter(image, 5)
-  # show(image)
-  # show(image2)
   # show2(image, image2)
 
   #
   # Test de medanFilter
   #
   # image2 = highBoost(image, 2, 'gaussian', 1)
-  image2 = highBoost(image, 2, 'median', 7)
-  # show(image)
-  # show(image2)
-  show2(image, image2)
+  # image2 = highBoost(image, 2, 'median', 7)
+  # show2(image, image2)
 
 if __name__ == "__main__":
   main()
