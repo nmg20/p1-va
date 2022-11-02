@@ -185,25 +185,56 @@ def highBoost(inImage, A, method, param):
 
 def erode(inImage, SE, center=[]):
   """
-
+  Aplica el operador morfológico de erosión.
+    - inImage: imagen -> conjuntos de posiciones con 1s.
+    - SE: elemento estructurante.
+    - center: origen del SE. Se asume que el [0, 0] es la esquina
+        superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  return null
+  m, n = np.shape(inImage)
+  p, q = np.shape(SE)
+  outImage = inImage[(m,n), dtype='float32']
+
+  for x in range(m):
+    for y in range(n):
+      window = inImage[(x-center[0]):(x+p-center[0]), (y-center[1]):(y+q-center[1])]
+      # Comprobar si hay que erosionar
+      eroded = false
+      for eex in range(p):
+        for eey in range(q):
+          if window[eex,eey]==0 and SE[eex,eey]==1:
+            eroded = true
+            # outImage[(x-center[0]):(x+p-center[0]),
+            #   (y-center[1]:(y+q-center[1]))] = 0.0
+  return outImage
 
 def dilate(inImage, SE, center=[]):
   """
-
+  Aplica el operador morfológico de dilatación.
+    - inImage: imagen -> conjuntos de posiciones con 1s.
+    - SE: elemento estructurante.
+    - center: origen del SE. Se asume que el [0, 0] es la esquina
+        superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
   return null
 
 def opening(inImage, SE, center=[]):
   """
-
+  Aplica el operador morfológico de apertura.
+    - inImage: imagen -> conjuntos de posiciones con 1s.
+    - SE: elemento estructurante.
+    - center: origen del SE. Se asume que el [0, 0] es la esquina
+        superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
   return null
 
 def closing(inImage, SE, center=[]):
   """
-
+  Aplica el operador morfológico de cierre.
+    - inImage: imagen -> conjuntos de posiciones con 1s.
+    - SE: elemento estructurante.
+    - center: origen del SE. Se asume que el [0, 0] es la esquina
+        superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
   return null
 
