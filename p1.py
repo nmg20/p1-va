@@ -109,18 +109,12 @@ def gaussKernel1D(sigma): # [1]
   -> N = 2*ceil(3*sigma)+1
   """
   n = 2 * math.ceil(3*sigma)+1
-  # centro = math.floor(n//2)+1
-  centro = math.floor(n//2)
-  kernel = np.zeros((1,n), dtype='float32')
-  # print("N: ",n,"\nCentro: ",centro,"\n\n")
+  centro = math.floor(n/2)
+  kernel = np.zeros(n, dtype='float32')
   div = 1/math.sqrt(2*math.pi*sigma)
   exp = 2 * sigma**2
-  # print("Div: ",div,"\n\n")
-  # for x in range(0,n):
-  #   kernel[0,x] = div * math.exp(-x**2/exp)
   for x in range(-centro,centro+1):
-    kernel[0,x+centro] = div * math.exp(-x**2/exp)
-  # print("Kernel: ",kernel)
+    kernel[x+centro] = div * math.exp(-x**2/exp)
   return kernel
 
 def gaussianFilter(inImage, sigma): # [1]
@@ -294,7 +288,7 @@ def main():
   #  Test de equalizeIntensity
   
   # image2 = equalizeIntensity(image, 256)
-  show2(image,image2)
+  # show2(image,image2)
 
   #####
 
@@ -314,9 +308,9 @@ def main():
   #
   # Test de gaussKernel1D
   #
-  # kernel1 = gaussKernel1D(0.5)
-  # matrix = kernel1 * kernel1.T
-  # print("Matriz: \n",matrix)
+  kernel1 = gaussKernel1D(0.5)
+  matrix = kernel1 * kernel1.T
+  print("Matriz: \n",matrix)
   # image2 = filterImage(image, matrix)
   # show2(image,image2)
 
