@@ -7,8 +7,8 @@ import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de l
 # - EqualizeIntensity -> usar numpy.hist o algo asi
 # - GaussFilter1D -> 0 a N o -centro a centro?
 # - HighBoost -> adjustIntensity con A?
-#             
-
+# - Añadir padding para los operadores morfológicos            
+#   -> en erode funciona(?)
 # Funciones auxiliares
 
 def read_img(path):
@@ -149,6 +149,7 @@ def medianFilter(inImage, filterSize):
   centro = filterSize//2
   for x in range(m):
     for y in range(n):
+      # Sólo se consideran los valores de la ventana situados dentro de la imagen
       limizq = max(0,y-centro)
       limder = min(n,y+filterSize-centro)
       limar = max(0,x-centro)
@@ -191,22 +192,26 @@ def erode(inImage, SE, center=[]):
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  m, n = np.shape(inImage)
+  m, n = np.shape(img)
   p, q = np.shape(SE)
-  outImage = inImage[(m,n), dtype='float32']
-
-  for x in range(m):
-    for y in range(n):
-      window = inImage[(x-center[0]):(x+p-center[0]), (y-center[1]):(y+q-center[1])]
-      # Comprobar si hay que erosionar
-      eroded = false
-      for eex in range(p):
-        for eey in range(q):
-          if window[eex,eey]==0 and SE[eex,eey]==1:
-            eroded = true
-            # outImage[(x-center[0]):(x+p-center[0]),
-            #   (y-center[1]:(y+q-center[1]))] = 0.0
-  return outImage
+  out = np.zeros((m,n), dtype='float32')
+  padH, padV = p//2, q//2
+  center = center if center else [padH, padV]
+  pad = cv.copyMakeBorder(img, padH, padH, padV, padV, cv.BORDER_CONSTANT)
+  for x in range(padH, m+padH, 1): #Recorremos la distancia de la imagen
+    for y in range(padV, n+padV, 1): # original dentro de la paddeada
+      limar = x-center[0]
+      limab = x+p-center[0]
+      limizq = y-center[1]
+      limder = y+q-center[1]
+      window = pad[limar:limab, limizq:limder]
+      out[x-padH,y-padV]=img[x-padH, y-padV]
+      # Se comprueba que se erosiona el píxel
+      for i in range(p):
+        for j in range(q):
+          if window[i][j]==0 and SE[i][j]==1:
+            out[x-padH, y-padV]=0
+  return out
 
 def dilate(inImage, SE, center=[]):
   """

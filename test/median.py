@@ -9,8 +9,8 @@ def read_img(path):
   return cv.imread(path, cv.IMREAD_GRAYSCALE)/255.
 
 def show(image):
-  if (image.shape[1]>300):
-    image = imutils.resize(image,width=300)
+  if (image.shape[1]>500):
+    image = imutils.resize(image,width=500)
   cv.imshow("", image)
   cv.waitKey(0)
   cv.destroyAllWindows()
@@ -32,13 +32,15 @@ def medianFilter(inImage, filterSize):
   m, n = np.shape(inImage)
   outImage = np.zeros((m,n), dtype='float32')
   centro = filterSize//2
+  img = cv.copyMakeBorder(inImage,centro,centro,centro,centro,cv.BORDER_CONSTANT)
   for x in range(m):
     for y in range(n):
-      limizq = max(0,y-centro)
-      limder = min(n,y+filterSize-centro)
-      limar = max(0,x-centro)
-      limab = min(m,x+filterSize-centro)
-      window = inImage[limar:limab,limizq:limder]
+      # limizq = max(0,y-centro)
+      # limder = min(n,y+filterSize-centro)
+      # limar = max(0,x-centro)
+      # limab = min(m,x+filterSize-centro)
+      # window = inImage[limar:limab,limizq:limder]
+      window = img[x:x+filterSize,y:y+filterSize]
       # outImage[x,y] = np.sum(window)/(len(window)*len(window[0]))
       outImage[x,y] = np.median(window)
       # print("---------------------")
