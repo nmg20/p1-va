@@ -5,10 +5,9 @@ import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de l
 
 # Dudas:
 # - EqualizeIntensity -> usar numpy.hist o algo asi
-# - GaussFilter1D -> 0 a N o -centro a centro?
 # - HighBoost -> adjustIntensity con A?
 # - Añadir padding para los operadores morfológicos            
-#   -> en erode funciona(?)
+#   -> en erode funciona(?) -> saber si hay casos en los que pueda fallar
 # Funciones auxiliares
 
 def read_img(path):
@@ -186,12 +185,13 @@ def erode(inImage, SE, center=[]):
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  m, n = np.shape(img)
+  m, n = np.shape(inImage)
   p, q = np.shape(SE)
-  out = np.zeros((m,n), dtype='float32')
+  outImage = np.zeros((m,n), dtype='float32')
   padH, padV = p//2, q//2
-  center = center if center else [padH, padV]
-  pad = cv.copyMakeBorder(img, padH, padH, padV, padV, cv.BORDER_CONSTANT)
+  if center==[]:
+    center=[padH, padV]
+  pad = cv.copyMakeBorder(inImage, padH, padH, padV, padV, cv.BORDER_CONSTANT)
   for x in range(padH, m+padH, 1): #Recorremos la distancia de la imagen
     for y in range(padV, n+padV, 1): # original dentro de la paddeada
       limar = x-center[0]
@@ -199,13 +199,13 @@ def erode(inImage, SE, center=[]):
       limizq = y-center[1]
       limder = y+q-center[1]
       window = pad[limar:limab, limizq:limder]
-      out[x-padH,y-padV]=img[x-padH, y-padV]
+      outImage[x-padH,y-padV]=inImage[x-padH, y-padV]
       # Se comprueba que se erosiona el píxel
       for i in range(p):
         for j in range(q):
           if window[i][j]==0 and SE[i][j]==1:
-            out[x-padH, y-padV]=0
-  return out
+            outImage[x-padH, y-padV]=0
+  return outImage
 
 def dilate(inImage, SE, center=[]):
   """
@@ -215,7 +215,27 @@ def dilate(inImage, SE, center=[]):
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  return null
+  m, n = np.shape(inImage)
+  p, q = np.shape(SE)
+  outImage = np.zeros((m,n), dtype='float32')
+  padH, padV = p//2, q//2
+  if center==[]:
+    center=[padH, padV]
+  pad = cv.copyMakeBorder(inImage, padH, padH, padV, padV, cv.BORDER_CONSTANT)
+  for x in range(padH, m+padH, 1): #Recorremos la distancia de la imagen
+    for y in range(padV, n+padV, 1): # original dentro de la paddeada
+      limar = x-center[0]
+      limab = x+p-center[0]
+      limizq = y-center[1]
+      limder = y+q-center[1]
+      window = pad[limar:limab, limizq:limder]
+      outImage[x-padH,y-padV]=inImage[x-padH, y-padV]
+      # Se comprueba que se erosiona el píxel
+      for i in range(p):
+        for j in range(q):
+          if window[i][j]==1 and SE[i][j]==1:
+            outImage[x-padH, y-padV]=1
+  return outImage
 
 def opening(inImage, SE, center=[]):
   """
@@ -308,9 +328,9 @@ def main():
   #
   # Test de gaussKernel1D
   #
-  kernel1 = gaussKernel1D(0.5)
-  matrix = kernel1 * kernel1.T
-  print("Matriz: \n",matrix)
+  # kernel1 = gaussKernel1D(0.5)
+  # matrix = kernel1 * kernel1.T
+  # print("Matriz: \n",matrix)
   # image2 = filterImage(image, matrix)
   # show2(image,image2)
 
@@ -332,6 +352,25 @@ def main():
   # image2 = highBoost(image, 2, 'gaussian', 1)
   # image2 = highBoost(image, 2, 'median', 7)
   # show2(image, image2)
+
+  # Test de highBoost
+
+
+  ##### Operadores Morfológicos
+
+  # Test de erode
+  # image = read_img("./imagenes/morphology/diagonal.png")
+  # image = read_img("./imagenes/morphology/blob.png")
+  image = read_img("./imagenes/morphology/a34.png")
+  SE = [[1,1]]
+  image2 = erode(image, SE, [])
+  show2(image, image2)
+
+  # Test de Dilate
+  image = read_img("./imagenes/morphology/ex.png")
+  SE = [[0,1,0],[1,1,1],[0,1,0]]
+  image2 = dilate(image, SE, [])
+  show2(image, image2)
 
 if __name__ == "__main__":
   main()
