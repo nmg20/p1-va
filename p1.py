@@ -5,8 +5,11 @@ import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de l
 
 # Dudas:
 # - EqualizeIntensity -> usar numpy.hist o algo asi
+# SACAR EL HISTOGRAMA MANUALMENTE
 # - HighBoost -> adjustIntensity con A?
-# - Añadir padding para los operadores morfológicos            
+# A COMO UMBRAL DE ENTRADA
+# - Añadir padding para los operadores morfológicos    
+# NO NECESARIO        
 #   -> en erode funciona(?) -> saber si hay casos en los que pueda fallar
 # Funciones auxiliares
 
@@ -16,6 +19,9 @@ def read_img(path):
   return - array (imagen)
   """
   return cv.imread(path, cv.IMREAD_GRAYSCALE)/255.
+
+def save_img(img, name):
+  cv.imwrite(name, 255*img)
 
 def show(image):
   """
@@ -65,18 +71,18 @@ def equalizeIntensity(inImage, nBins=256):  # [0]
   Ecualiza el histograma de la imagen.
   - nBins = número de bins empleados en el procesamiento.
   """
-  m, n = np.shape(inImage)
-  outImage = np.zeros((m,n), dtype='float32')
-  histograma = np.zeros(nBins) # Array de zeros de tamaño nBins (se llena con los valores de las intensidades)
-  bins = np.linspace(np.min(inImage), np.max(inImage), nBins) # Se crea un array que va desde la instensidad más baja a la mayor en nBins steps
+  hist = np.zeros(nBins, dtype='int')
+  binsAux = np.linspace(np.min(inImage), np.max(inImage), nBins+1)
+  outImage = np.zeros((np.shape(inImage)),dtype='float32')
   for x in np.nditer(inImage):
-    i=0
-    while x<=bins[i]:
+    i = 0
+    while x>binsAux[i]:
       i=i+1
-    histograma[i]=histograma[i]+1
-  histAcum = histograma.cumsum()
-  outImage = np.interp(inImage, bins[:-1], histAcum)
-
+    hist[i-1] = hist[i-1]+1
+  cdf = hist.cumsum()
+  c_norm = cdf * hist.max() / cdf.max()
+  outImage = np.interp(inImage, binsAux[:-1], c_norm)
+  outImage = adjustIntensity(outImage,[],[0,1])
   return outImage
 
 # Filtrado espacial: suavizado y realce
@@ -109,11 +115,11 @@ def gaussKernel1D(sigma): # [1]
   """
   n = 2 * math.ceil(3*sigma)+1
   centro = math.floor(n/2)
-  kernel = np.zeros(n, dtype='float32')
+  kernel = np.zeros((1,n), dtype='float32')
   div = 1/math.sqrt(2*math.pi*sigma)
   exp = 2 * sigma**2
   for x in range(-centro,centro+1):
-    kernel[x+centro] = div * math.exp(-x**2/exp)
+    kernel[0,x+centro] = div * math.exp(-x**2/exp)
   return kernel
 
 def gaussianFilter(inImage, sigma): # [1]
@@ -168,10 +174,11 @@ def highBoost(inImage, A, method, param):
   elif method=='median':
     suavizado = medianFilter(inImage, param)
   
-  for x in range(0,m-1,1):
-    for y in range(0,n-1,1):
+  for x in range(m):
+    for y in range(n):
         realzado[x,y] = A*inImage[x,y]-suavizado[x,y]
   # realzado = adjustIntensity(realzado, [], [0,1])
+  # return A*inImage-suavizado
   return realzado
   # return adjustIntensity((A*inImage-suavizado),[],[0,1])
 
@@ -288,25 +295,19 @@ def cornerHarris(inImage, sigmaD, sigmaI, t):
 
 
 def main():
-  # image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/circles1.png")
-  # image = read_img("./imagenes/77.png")
-  # image = read_img("./imagenes/blob55.png")
-  # image = read_img("./imagenes/point55.png")
-  # image = read_img("./imagenes/x55.png")
-  # image = read_img("./imagenes/salt77.png")
-  # image = read_img("./imagenes/salt99.png")
-  image = read_img("./imagenes/saltgirl.png")
 
   #
   #  Test de adjustIntensity
   #
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
   # image2 = adjustIntensity(image, [0, 0.5], [0, 1])
   # show2(image,image2)
 
   #
   #  Test de equalizeIntensity
   
+  # image = read_img("./imagenes/eq.jpg")
   # image2 = equalizeIntensity(image, 256)
   # show2(image,image2)
 
@@ -315,6 +316,8 @@ def main():
   #
   #  Test de filterImage
   #
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
   # kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
   # kernel = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
   #   [1,1,1,1,1],[1,1,1,1,1]]
@@ -328,6 +331,9 @@ def main():
   #
   # Test de gaussKernel1D
   #
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/saltgirl.png")
   # kernel1 = gaussKernel1D(0.5)
   # matrix = kernel1 * kernel1.T
   # print("Matriz: \n",matrix)
@@ -337,40 +343,43 @@ def main():
   #
   # Test de gaussianFilter
   #
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/saltgirl.png")
   # image2 = gaussianFilter(image, 1)
   # show2(image,image2)
 
   #
   # Test de medanFilter
   #
+  # image = read_img("./imagenes/saltgirl.png")
   # image2 = medianFilter(image, 5)
   # show2(image, image2)
 
   #
-  # Test de medanFilter
-  #
-  # image2 = highBoost(image, 2, 'gaussian', 1)
-  # image2 = highBoost(image, 2, 'median', 7)
-  # show2(image, image2)
-
   # Test de highBoost
-
+  #
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/saltgirl.png")
+  # image2 = highBoost(image, 2, 'gaussian', 1)
+  # image2 = highBoost(image, 2, 'median', 3)
+  # show2(image, image2)
 
   ##### Operadores Morfológicos
 
-  # Test de erode
+  # Test de Erode
   # image = read_img("./imagenes/morphology/diagonal.png")
   # image = read_img("./imagenes/morphology/blob.png")
-  image = read_img("./imagenes/morphology/a34.png")
-  SE = [[1,1]]
-  image2 = erode(image, SE, [])
-  show2(image, image2)
+  # image = read_img("./imagenes/morphology/a34.png")
+  # SE = [[1,1]]
+  # image2 = erode(image, SE, [])
+  # show2(image, image2)
 
   # Test de Dilate
-  image = read_img("./imagenes/morphology/ex.png")
-  SE = [[0,1,0],[1,1,1],[0,1,0]]
-  image2 = dilate(image, SE, [])
-  show2(image, image2)
+  # image = read_img("./imagenes/morphology/ex.png")
+  # SE = [[0,1,0],[1,1,1],[0,1,0]]
+  # image2 = dilate(image, SE, [])
+  # show2(image, image2)
 
 if __name__ == "__main__":
   main()
