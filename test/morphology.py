@@ -26,6 +26,8 @@ def show2(img1, img2):
   cv.waitKey(0)
   cv.destroyAllWindows()
 
+############### Versiones con Padding ###############
+
 ### Erosión ###
 
 def erode(img, SE, center=[]):
@@ -76,6 +78,29 @@ def dilate(img, SE, center=[]):
             out[x-padH, y-padV]=1
   return out
 
+############### Versiones sin padding ###############
+
+# def erode(img, SE, center=[]):
+#   m, n = np.shape(img)
+#   p, q = np.shape(SE)
+#   out = np.zeros((m,n), dtype='float32')
+#   if center==[]:
+#     center=[p//2, q//2]
+#   for x in range(m): #Recorremos la distancia de la imagen
+#     for y in range(n): # original dentro de la paddeada
+#       limar = max(0,x-center[0])
+#       limab = min(m,x+p-center[0])
+#       limizq = max(0,y-center[1])
+#       limder = min(n,y+q-center[1])
+#       window = img[limar:limab, limizq:limder]
+#       out[x,y]=img[x,y]
+#       SEAux = SE[limar:limab, limizq:limder]
+#       # Se comprueba que se erosiona el píxel
+#       for i in range(p):
+#         for j in range(q):
+#           if window[i][j]==0 and SEAux[i][j]==1:
+#             out[x, y]=0
+#   return out
 
 #####
 
@@ -93,9 +118,9 @@ def main():
 
   ### Dilate ###
 
-  SE = [[0,1,0],[1,1,1],[0,1,0]]
-  image2 = dilate(image, SE, [1,1])
-  show2(image, image2)
+  # SE = [[0,1,0],[1,1,1],[0,1,0]]
+  # image2 = dilate(image, SE, [1,1])
+  # show2(image, image2)
 
 if __name__ == "__main__":
   main()
