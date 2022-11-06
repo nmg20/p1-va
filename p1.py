@@ -252,7 +252,7 @@ def opening(inImage, SE, center=[]):
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  return null
+  return dilate(erode(inImage,SE,center),SE,center)
 
 def closing(inImage, SE, center=[]):
   """
@@ -262,7 +262,7 @@ def closing(inImage, SE, center=[]):
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  return null
+  return erode(dilate(inImage, SE, center), SE, center)
 
 def fill(inImage, seeds, SE=[], center=[]):
   """
@@ -371,7 +371,8 @@ def main():
   # image = read_img("./imagenes/morphology/diagonal.png")
   # image = read_img("./imagenes/morphology/blob.png")
   # image = read_img("./imagenes/morphology/a34.png")
-  # SE = [[1,1]]
+  # image = read_img("./imagenes/morphology/ex.png")
+  # SE = [[1,1],[1,1]]
   # image2 = erode(image, SE, [])
   # show2(image, image2)
 
@@ -380,6 +381,22 @@ def main():
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
   # image2 = dilate(image, SE, [])
   # show2(image, image2)
+
+  # Test de Opening
+  image = read_img("./imagenes/morphology/ex.png")
+  # image = read_img("./imagenes/morphology/dotsnlines.png")
+  # SE = [[0,1,0],[0,1,0],[0,1,0]]
+  SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
+  image2 = opening(image, SE, [])
+  show2(image, image2)
+
+  # Test de Closing
+  image = read_img("./imagenes/morphology/ex.png")
+  # image = read_img("./imagenes/morphology/dotsnlines.png")
+  # SE = [[0,1,0],[0,1,0],[0,1,0]]
+  SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
+  image2 = closing(image, SE, [])
+  show2(image, image2)
 
 if __name__ == "__main__":
   main()
