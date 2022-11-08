@@ -66,7 +66,7 @@ def adjustIntensity(inImage, inRange=[], outRange=[0, 1]): # [2]
   # print("MinIn: ",min_in,"\tMaxIn: ",max_in,"\n\tMinOut: ",min_out,"\tMaxOut: ",max_out)
   return min_out + (((max_out - min_out)*inImage - min_in)/(max_in - min_in))
 
-def equalizeIntensity(inImage, nBins=256):  # [0]
+def equalizeIntensity(inImage, nBins=256):  # [1]
   """
   Ecualiza el histograma de la imagen.
   - nBins = número de bins empleados en el procesamiento.
@@ -112,6 +112,7 @@ def gaussKernel1D(sigma): # [1]
   - sigma = desviación típica
   -> centro x=0 de la Gaussiana está en floor(N/2)+1
   -> N = 2*ceil(3*sigma)+1
+  --> devuelve un array (0,n) -> importante para hacer la transposición
   """
   n = 2 * math.ceil(3*sigma)+1
   centro = math.floor(n/2)
@@ -133,9 +134,10 @@ def gaussianFilter(inImage, sigma): # [1]
     -> Multiplicar un kernel gaussiano 1xN por su matriz transpuesta
     -> Aplicar filterImage con la matriz anterior como kernel del filtro.
   """
-  kernel = gaussKernel1D(sigma)  
-  matrix = kernel * kernel.T
-  outImage = filterImage(inImage, matrix)
+  kernel = gaussKernel1D(sigma)
+  # matrix = kernel * kernel.T
+  # outImage = filterImage(inImage, matrix)
+  outImage = filterImage(filterImage(inImage, kernel), kernel.T)
   return outImage
 
 def medianFilter(inImage, filterSize):
@@ -174,10 +176,11 @@ def highBoost(inImage, A, method, param):
   elif method=='median':
     suavizado = medianFilter(inImage, param)
   
-  for x in range(m):
-    for y in range(n):
-        realzado[x,y] = A*inImage[x,y]-suavizado[x,y]
+  # for x in range(m):
+  #   for y in range(n):
+  #       realzado[x,y] = A*inImage[x,y]-suavizado[x,y]
   # realzado = adjustIntensity(realzado, [], [0,1])
+  realzado = adjustIntensity(A*inImage-suavizado, [], [0,1])
   # return A*inImage-suavizado
   return realzado
   # return adjustIntensity((A*inImage-suavizado),[],[0,1])
@@ -237,7 +240,7 @@ def dilate(inImage, SE, center=[]):
       limder = y+q-center[1]
       window = pad[limar:limab, limizq:limder]
       outImage[x-padH,y-padV]=inImage[x-padH, y-padV]
-      # Se comprueba que se erosiona el píxel
+      # Se comprueba que se dilata la región en torno al píxel
       for i in range(p):
         for j in range(q):
           if window[i][j]==1 and SE[i][j]==1:
@@ -266,7 +269,11 @@ def closing(inImage, SE, center=[]):
 
 def fill(inImage, seeds, SE=[], center=[]):
   """
-
+  Realiza el llenado morfológico de una o varias regiones.
+    - seeds: matriz Nx2 con N coordenadas (fila, columna) de los
+      puntos por donde se empieza a llenar la imagen.
+    - SE: matriz PxQ binaria que define el elemento estructurante
+      de conectividad. Si es vacío se supone conectividad 4.
   """
   return null
 
@@ -274,13 +281,17 @@ def fill(inImage, seeds, SE=[], center=[]):
 
 def gradientImage(inImage, operator):
   """
-
+  Devuelve las componentes Gx y Gy del gradiente de una imagen.
+    - operator: define el método que se usa para obtener el gradiente.
+      -->Roberts, CentralDiff(de Prewitt/Sobel), Prewitt, Sobel.
   """
   return null
 
 def edgeCanny(inImage, sigma, tlow, thigh):
   """
-
+  Algoritmo de detección de bordes Canny.
+    - sigma: Parámetro del filtro gaussiano.
+    - tlow, thigh: umbrales de histéresis bajo y alto.
   """
   return null
 
@@ -334,7 +345,7 @@ def main():
   # image = read_img("./imagenes/circles.png")
   # image = read_img("./imagenes/circles1.png")
   # image = read_img("./imagenes/saltgirl.png")
-  # kernel1 = gaussKernel1D(0.5)
+  kernel1 = gaussKernel1D(0.5)
   # matrix = kernel1 * kernel1.T
   # print("Matriz: \n",matrix)
   # image2 = filterImage(image, matrix)
@@ -361,42 +372,41 @@ def main():
   #
   # image = read_img("./imagenes/circles.png")
   # image = read_img("./imagenes/saltgirl.png")
-  # image2 = highBoost(image, 2, 'gaussian', 1)
+  # image = read_img("./test/pruebas/blur.png")
+  # image2 = highBoost(image, 3, 'gaussian', 1)
   # image2 = highBoost(image, 2, 'median', 3)
   # show2(image, image2)
 
   ##### Operadores Morfológicos
 
-  # Test de Erode
   # image = read_img("./imagenes/morphology/diagonal.png")
   # image = read_img("./imagenes/morphology/blob.png")
   # image = read_img("./imagenes/morphology/a34.png")
+
   # image = read_img("./imagenes/morphology/ex.png")
+  # image = read_img("./imagenes/morphology/dotsnlines.png")
+
+  # Test de Erode
   # SE = [[1,1],[1,1]]
   # image2 = erode(image, SE, [])
   # show2(image, image2)
 
   # Test de Dilate
-  # image = read_img("./imagenes/morphology/ex.png")
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
   # image2 = dilate(image, SE, [])
   # show2(image, image2)
 
   # Test de Opening
-  image = read_img("./imagenes/morphology/ex.png")
-  # image = read_img("./imagenes/morphology/dotsnlines.png")
   # SE = [[0,1,0],[0,1,0],[0,1,0]]
-  SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
-  image2 = opening(image, SE, [])
-  show2(image, image2)
+  # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
+  # image2 = opening(image, SE, [])
+  # show2(image, image2)
 
   # Test de Closing
-  image = read_img("./imagenes/morphology/ex.png")
-  # image = read_img("./imagenes/morphology/dotsnlines.png")
   # SE = [[0,1,0],[0,1,0],[0,1,0]]
-  SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
-  image2 = closing(image, SE, [])
-  show2(image, image2)
+  # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
+  # image2 = closing(image, SE, [])
+  # show2(image, image2)
 
 if __name__ == "__main__":
   main()
