@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
+from skimage import data
 
 # Dudas:
 # - EqualizeIntensity -> usar numpy.hist o algo asi
