@@ -21,7 +21,7 @@ def main(args):
       inImage = exec('read_img',args)
   else:
 
-# IDEA:
+# PLAN:
 # Se pueden probar las funciones individualmente o todas de una vez
 # Se pueden probar con cada imagen individualmente o contra un pool
 #   -> maybe pool específico para cada función(?)
