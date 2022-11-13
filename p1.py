@@ -4,14 +4,19 @@ import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
 from skimage import data
 
+############################################################
 # Dudas:
-# - EqualizeIntensity -> usar numpy.hist o algo asi
-# SACAR EL HISTOGRAMA MANUALMENTE
 # - HighBoost -> adjustIntensity con A?
 # A COMO UMBRAL DE ENTRADA
 # - Añadir padding para los operadores morfológicos    
 # NO NECESARIO        
 #   -> en erode funciona(?) -> saber si hay casos en los que pueda fallar
+# Fill debería funcionar en fondos/ figuras cortadas por los bordes de la imagen?
+# Gradient -> Operador de CentralDiff 
+#     -> [-1,0,1].T*[-1,0,1]?
+############################################################
+
+
 # Funciones auxiliares
 
 def read_img(path):
@@ -449,31 +454,62 @@ def main():
   # image = read_img("./imagenes/morphology/diagonal.png")
   # image = read_img("./imagenes/morphology/blob.png")
   # image = read_img("./imagenes/morphology/a34.png")
-
   # image = read_img("./imagenes/morphology/ex.png")
-  # image = read_img("./imagenes/morphology/dotsnlines.png")
 
+  #
   # Test de Erode
+  #
   # SE = [[1,1],[1,1]]
   # image2 = erode(image, SE, [])
   # show(image, image2)
 
+  #
   # Test de Dilate
+  #
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
   # image2 = dilate(image, SE, [])
   # show(image, image2)
 
+  #
   # Test de Opening
+  #
   # SE = [[0,1,0],[0,1,0],[0,1,0]]
   # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
   # image2 = opening(image, SE, [])
   # show(image, image2)
 
+  #
   # Test de Closing
+  #
   # SE = [[0,1,0],[0,1,0],[0,1,0]]
   # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
   # image2 = closing(image, SE, [])
   # show(image, image2)
+
+  #
+  # Test de Fill
+  #
+  # image = read_img("./imagenes/morphology/closed.png")
+  # image = read_img("./imagenes/morphology/closed44.png")
+  # image = read_img("./imagenes/morphology/closed10.png")
+  # image = read_img("./imagenes/morphology/closed2.png")
+  # seeds = [[1,1]]
+  # seeds = [[5,5]]
+  # seeds = [[2,2],[8,8]]
+  # image2 = fill(image, seeds, [], [])
+  # show(image, image2)
+
+  #
+  # Test de GradientImage
+  #
+  # image = read_img("./imagenes/morphology/closed.png")
+  # image = read_img("./imagenes/grad7.png")
+  # image = read_img("./imagenes/lena.png")
+  # gx, gy = gradientImage(image, "roberts")
+  # gx = adjustIntensity(gx, [], [0,1])
+  # gy = adjustIntensity(gy, [], [0,1])
+  # show(image, gx)
+  # show(image, gy)
 
 if __name__ == "__main__":
   main()

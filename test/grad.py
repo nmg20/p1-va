@@ -91,10 +91,6 @@ def main():
   # image = read_img("./imagenes/grad7.png")
   image = read_img("./imagenes/lena.png")
 
-  ### Erode ###
-
-  # SE = [[0,1,0],[1,1,1],[0,1,0]]
-  # seeds = [[1,1],[4,2]]
   gx, gy = gradientImage(image, "roberts")
   gx = adjustIntensity(gx, [], [0,1])
   gy = adjustIntensity(gy, [], [0,1])
