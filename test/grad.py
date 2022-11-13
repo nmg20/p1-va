@@ -67,11 +67,14 @@ def gradientImage(inImage, operator):
   a = np.array([[-1,0,1]])
   b = np.array([[1,1,1]])
   c = np.array([[1,2,1]])
-  if operator == "roberts":
+  d = np.array([[0,1,0]])
+  if operator == "Roberts":
     mx, my = np.array([[-1,0],[0,1]]), np.array([[0,-1],[1,0]])
-  elif operator == "prewitt":
+  elif operator == "CentralDiff":
+    mx, my = a.T * d, d.T * a
+  elif operator == "Prewitt":
     mx, my = b.T * a, a.T * b
-  elif operator == "sobel":
+  elif operator == "sSobel":
     mx, my = c.T * a, a.T*c
   p, q = mx.shape # Se toman las dimensiones de una matriz indistinta de las dos para hacer padding
   a, b = p//2, q//2
