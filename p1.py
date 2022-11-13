@@ -34,7 +34,7 @@ def show(image):
   cv.waitKey(0)
   cv.destroyAllWindows()
 
-def show2(img1, img2):
+def show(img1, img2):
   """
   Muestra dos imágenes una al lado de otra.
   """
@@ -355,14 +355,14 @@ def main():
   # image = read_img("./imagenes/circles.png")
   # image = read_img("./imagenes/circles1.png")
   # image2 = adjustIntensity(image, [0, 0.5], [0, 1])
-  # show2(image,image2)
+  # show(image,image2)
 
   #
   #  Test de equalizeIntensity
   
   # image = read_img("./imagenes/eq.jpg")
   # image2 = equalizeIntensity(image, 256)
-  # show2(image,image2)
+  # show(image,image2)
 
   #####
 
@@ -379,7 +379,7 @@ def main():
   # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]] # Oscurece la imagen
   # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]] # Aclara la imagen
   # image2 = filterImage(image, kernel)
-  # show2(image,image2)
+  # show(image,image2)
 
   #
   # Test de gaussKernel1D
@@ -391,7 +391,7 @@ def main():
   # matrix = kernel1 * kernel1.T
   # print("Matriz: \n",matrix)
   # image2 = filterImage(image, matrix)
-  # show2(image,image2)
+  # show(image,image2)
 
   #
   # Test de gaussianFilter
@@ -400,14 +400,14 @@ def main():
   # image = read_img("./imagenes/circles1.png")
   # image = read_img("./imagenes/saltgirl.png")
   # image2 = gaussianFilter(image, 1)
-  # show2(image,image2)
+  # show(image,image2)
 
   #
   # Test de medanFilter
   #
   # image = read_img("./imagenes/saltgirl.png")
   # image2 = medianFilter(image, 5)
-  # show2(image, image2)
+  # show(image, image2)
 
   #
   # Test de highBoost
@@ -417,7 +417,7 @@ def main():
   # image = read_img("./test/pruebas/blur.png")
   # image2 = highBoost(image, 3, 'gaussian', 1)
   # image2 = highBoost(image, 2, 'median', 3)
-  # show2(image, image2)
+  # show(image, image2)
 
   ##### Operadores Morfológicos
 
@@ -431,24 +431,24 @@ def main():
   # Test de Erode
   # SE = [[1,1],[1,1]]
   # image2 = erode(image, SE, [])
-  # show2(image, image2)
+  # show(image, image2)
 
   # Test de Dilate
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
   # image2 = dilate(image, SE, [])
-  # show2(image, image2)
+  # show(image, image2)
 
   # Test de Opening
   # SE = [[0,1,0],[0,1,0],[0,1,0]]
   # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
   # image2 = opening(image, SE, [])
-  # show2(image, image2)
+  # show(image, image2)
 
   # Test de Closing
   # SE = [[0,1,0],[0,1,0],[0,1,0]]
   # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
   # image2 = closing(image, SE, [])
-  # show2(image, image2)
+  # show(image, image2)
 
 if __name__ == "__main__":
   main()
