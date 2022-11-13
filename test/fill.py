@@ -23,7 +23,7 @@ def show(image):
   cv.waitKey(0)
   cv.destroyAllWindows()
 
-def show2(img1, img2):
+def show(img1, img2):
   height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
   if (width>300):
     img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
@@ -69,70 +69,62 @@ def invert(image): # Invierte una imagen binaria en forma de ndarray
 
 ########################################################
 
-# def filled()
-
-# def fillWin(window, SE, x, y):
-#   """
-#   Llena una zona respectiva al tamaño del SE. 
-#     ->Operación atómica -> se aplica convolutivamente.
-#   """
+# def fillWin(window, SE, Ac, x, y):
 #   m, n = window.shape
-#   result = np.zeros((m,n), dtype='float32')
-#   filled = []
+#   result = window.copy()
+#   filled = set([])
 #   for i in range(m):
 #     for j in range(n):
-#       if (window[i][j]==0 and SE[i][j]==1):
-#         filled.append([i+x-1,j+y-1])
-#       result[i][j]=(window[i][j]==1 or SE[i][j]==1)
+#       if ((window[i][j]==0 and SE[i][j]==1) and Ac[i][j]==1):
+#         filled.add((i+x-1,j+y-1))
+#         result[i][j]=1
 #   return result, filled
-
-# def fillReg(reg, SE):
-#   """
-#   Aplica fillWin a toda una región cerrada.
-#   """
 
 # def fill(inImage, seeds, SE=[], center=[]):
 #   if SE == []:
+#     # Por defecto se considera conectividad-4
 #     SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
 #   m, n = inImage.shape
-#   p,q = SE.shape
+#   p, q = SE.shape
 #   a, b = p//2, q//2
 #   if center == []:
 #     center=[a,b]
 #   # outImage = np.zeros((m,n), dtype='float32')
 #   outImage = inImage.copy()
-#   filled = []
-#   # pad = cv.copyMakeBorder(inImage, p//2,p//2,q//2,q//2,cv.BORDER_CONSTANT)
+#   inverted = 1-np.asarray(inImage)
+#   # show(inImage, inverted)
+#   filled = set([])
 #   for (sx, sy) in seeds:
-#     for x in range(sx,m,1):
-#       for y in range(sy,n,1):
-#         limar = max(0,x-(a))
-#         limab = min(m,x+p-(a))
-#         limizq = max(0,y-(b))
-#         limder = min(n,y+q-(b))
-#         window = inImage[limar:limab, limizq:limder]
-#         r, f = fillWin(window, SE, x, y)
-#         outImage[limar:limab, limizq:limder]=r
-#         filled = filled + f
-#   print("Filled:",filled)
-#   return outImage, filled
+#     filled.add((sx,sy))
+#     while len(filled)>0:
+#       (sx,sy)=filled.pop()
+#       limar = max(0,sx-a)
+#       limab = min(m,sx+p-a)
+#       limizq = max(0,sy-b)
+#       limder = min(n,sy+q-b)
+#       window = outImage[limar:limab, limizq:limder]
+#       Ac = inverted[limar:limab, limizq:limder]
+#       # for x in range(p):
+#       #   for y in range(q):
+#       #     if (inImage[sx+x,sy+y]==0 and inverted[sx+x,sy+y]==1):
+#       #       outImage[sx+x,sy+y]=SE[x,y]
+#       #       filled.add((sx+1,sy+y))
+#       r, f = fillWin(window, SE, Ac, sx, sy)
+#       outImage[limar:limab, limizq:limder] = r
+#       filled = filled.union(f)
+#   return outImage
 
-########################################################
+#######
 
-def dilatacionCondicional(window, SE, ac):
-  result = np.zeros()
-  return result, filled
-
-def fillWin(window, SE, Ac, x, y):
+def fillWin(window, SE, Ac, x, y, filled):
   m, n = window.shape
   result = window.copy()
-  filled = set([])
   for i in range(m):
     for j in range(n):
-      if (window[i][j]==0 and SE[i][j]==1 and Ac[i][j]==1):
+      if ((window[i][j]==0 and SE[i][j]==1) and Ac[i][j]==1):
         filled.add((i+x-1,j+y-1))
         result[i][j]=1
-  return result, filled
+  return result
 
 def fill(inImage, seeds, SE=[], center=[]):
   if SE == []:
@@ -143,41 +135,39 @@ def fill(inImage, seeds, SE=[], center=[]):
   a, b = p//2, q//2
   if center == []:
     center=[a,b]
-  # outImage = np.zeros((m,n), dtype='float32')
   outImage = inImage.copy()
   inverted = 1-np.asarray(inImage)
+  # show(inImage, inverted)
   filled = set([])
   for (sx, sy) in seeds:
     filled.add((sx,sy))
     while len(filled)>0:
       (sx,sy)=filled.pop()
-      limar = max(0,sx-(a))
-      limab = min(m,sx+p-(a))
-      limizq = max(0,sy-(b))
-      limder = min(n,sy+q-(b))
-      window = inImage[limar:limab, limizq:limder]
+      limar = max(0,sx-a)
+      limab = min(m,sx+p-a)
+      limizq = max(0,sy-b)
+      limder = min(n,sy+q-b)
+      window = outImage[limar:limab, limizq:limder]
       Ac = inverted[limar:limab, limizq:limder]
-      # for x in range(p):
-      #   for y in range(q):
-      #     if (inImage[sx+x,sy+y]==0 and inverted[sx+x,sy+y]==1):
-      #       outImage[sx+x,sy+y]=SE[x,y]
-      #       filled.add((sx+1,sy+y))
-      r, f = fillWin(window, SE, Ac, sx, sy)
-      outImage[limar:limab, limizq:limder] = r
-      filled.union(f)
+      outImage[limar:limab, limizq:limder] = fillWin(window, SE, Ac, sx, sy, filled)
   return outImage
+
 #####
 
 def main():
   image = read_img("./imagenes/morphology/closed.png")
   # image = read_img("./imagenes/morphology/closed44.png")
+  # image = read_img("./imagenes/morphology/closed10.png")
+  # image = read_img("./imagenes/morphology/closed2.png")
 
   ### Erode ###
 
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
-  seeds = [[1,1]
+  # seeds = [[1,1]]
+  seeds = [[5,5]]
+  # seeds = [[2,2],[8,8]]
   image2 = fill(image, seeds, [], [])
-  show2(image, image2)
+  show(image, image2)
 
 if __name__ == "__main__":
   main()
