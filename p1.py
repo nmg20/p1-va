@@ -268,6 +268,25 @@ def closing(inImage, SE, center=[]):
   """
   return erode(dilate(inImage, SE, center), SE, center)
 
+def fillWin(window, SE, Ac, x, y, filled):
+  """
+  Función auxiliar que llena una región delimitada en una ventana (window), 
+  usando SE y el invertido del fondo (Ac) para hacer la dilatación condicional.
+    -window: ventana de la imagen a rellenar (tamaño del SE).
+    -Ac: ventana del invertido de la imagen original (tamaño del SE).
+    -x, y: coordenadas globales del centro del SE en la imgen.
+    -filled: set con las coordenadas de los puntos que se rellenan.
+  -> devuelve la matriz de la región rellenada.
+  """
+  m, n = window.shape
+  result = window.copy()
+  for i in range(m):
+    for j in range(n):
+      if ((window[i][j]==0 and SE[i][j]==1) and Ac[i][j]==1):
+        filled.add((i+x-1,j+y-1))
+        result[i][j]=1
+  return result
+
 def fill(inImage, seeds, SE=[], center=[]):
   """
   Realiza el llenado morfológico de una o varias regiones.
@@ -276,7 +295,29 @@ def fill(inImage, seeds, SE=[], center=[]):
     - SE: matriz PxQ binaria que define el elemento estructurante
       de conectividad. Si es vacío se supone conectividad 4.
   """
-  return null
+  if SE == []:
+    # Por defecto se considera conectividad-4
+    SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
+  m, n = inImage.shape
+  p, q = SE.shape
+  if center == []:
+    center=[p//2,q//2]
+  outImage = inImage.copy() # Copia de la imagen sobre la que trabajamos
+  inverted = 1-np.asarray(inImage) # Imagen invertida -> dilatación condicional
+  # show(inImage, inverted)
+  filled = set([])
+  for (sx, sy) in seeds:
+    filled.add((sx,sy))
+    while len(filled)>0:
+      (sx,sy)=filled.pop()
+      limar = max(0,sx-center[0])
+      limab = min(m,sx+p-center[0])
+      limizq = max(0,sy-center[1])
+      limder = min(n,sy+q-center[1])
+      window = outImage[limar:limab, limizq:limder]
+      Ac = inverted[limar:limab, limizq:limder]
+      outImage[limar:limab, limizq:limder] = fillWin(window, SE, Ac, sx, sy, filled)
+  return outImage
 
 # Detección de bordes
 
