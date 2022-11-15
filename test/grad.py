@@ -71,7 +71,7 @@ def gradientImage(inImage, operator):
   if operator == "Roberts":
     mx, my = np.array([[-1,0],[0,1]]), np.array([[0,-1],[1,0]])
   elif operator == "CentralDiff":
-    mx, my = a.T * d, d.T * a
+    mx, my = a.T*d, d.T*a # Deberían ser el vector a y su transpuesta (no funciona x alguna razon)
   elif operator == "Prewitt":
     mx, my = b.T * a, a.T * b
   elif operator == "sSobel":
@@ -94,7 +94,7 @@ def main():
   # image = read_img("./imagenes/grad7.png")
   image = read_img("./imagenes/lena.png")
 
-  gx, gy = gradientImage(image, "roberts")
+  gx, gy = gradientImage(image, "CentralDiff")
   gx = adjustIntensity(gx, [], [0,1])
   gy = adjustIntensity(gy, [], [0,1])
   show(image, gx)

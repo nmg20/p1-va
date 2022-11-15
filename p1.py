@@ -12,11 +12,15 @@ from skimage import data
 # NO NECESARIO        
 #   -> en erode funciona(?) -> saber si hay casos en los que pueda fallar
 # Fill debería funcionar en fondos/ figuras cortadas por los bordes de la imagen?
+# -> OBVIAMENTE SI xd
 # Gradient -> Operador de CentralDiff 
 #     -> [-1,0,1].T*[-1,0,1]?
 ############################################################
 
+# -> mirar morfologia con kernels destructivos
+#     -> dilatacion con un kernel con un 0 en 0,0
 
+# -> hacer pruebas en morfología con 8-conectividad
 # Funciones auxiliares
 
 def read_img(path):
@@ -250,7 +254,8 @@ def dilate(inImage, SE, center=[]):
       for i in range(p):
         for j in range(q):
           if window[i][j]==1 and SE[i][j]==1:
-            outImage[x-padH, y-padV]=1
+          # if window[i][j]==1:
+            outImage[x-padH, y-padV]=SE[i][j]
   return outImage
 
 def opening(inImage, SE, center=[]):
@@ -448,7 +453,7 @@ def main():
   # image = read_img("./imagenes/morphology/diagonal.png")
   # image = read_img("./imagenes/morphology/blob.png")
   # image = read_img("./imagenes/morphology/a34.png")
-  # image = read_img("./imagenes/morphology/ex.png")
+  image = read_img("./imagenes/morphology/ex.png")
 
   #
   # Test de Erode
@@ -461,8 +466,9 @@ def main():
   # Test de Dilate
   #
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
-  # image2 = dilate(image, SE, [])
-  # show(image, image2)
+  SE = [[0,1,0],[1,0,1],[0,1,0]]
+  image2 = dilate(image, SE, [])
+  show(image, image2)
 
   #
   # Test de Opening
@@ -498,11 +504,11 @@ def main():
   #
   # image = read_img("./imagenes/morphology/closed.png")
   # image = read_img("./imagenes/grad7.png")
-  image = read_img("./imagenes/lena.png")
-  gx, gy = gradientImage(image, "Roberts")
-  gx = adjustIntensity(gx, [], [0,1])
+  # image = read_img("./imagenes/lena.png")
+  # gx, gy = gradientImage(image, "Roberts")
+  # gx = adjustIntensity(gx, [], [0,1])
   # gy = adjustIntensity(gy, [], [0,1])
-  show(image, gx)
+  # show(image, gx)
   # show(image, gy)
 
 if __name__ == "__main__":
