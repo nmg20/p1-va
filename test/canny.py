@@ -4,32 +4,23 @@ import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
 import p1
 
-# Funciones auxiliares
+def direccion(gx, gy):
+  m,n = gx.shape()
+  direcion = np.zeros((m,n), dtype='float32')
+  for i in range(m):
+    for j in range(n):
+      if (gy[i,j]==0):
+        direccion[i,j]=0
+      else:
+        direccion[i,j]=np.arctan(gx[i,j]/gy[i,j])
+  return direccion
 
-def read_img(path):
-  return cv.imread(path, cv.IMREAD_GRAYSCALE)/255.
-
-def show(image):
-  if (image.shape[1]>300):
-    image = imutils.resize(image,width=300)
-  cv.imshow("", image)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
-
-def show(img1, img2):
-  height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
-  if (width>300):
-    img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
-    img2 = imutils.resize(img2,width=300)
-  # print("Height: ",height,"\tWidth: ",width)
-  pack = np.concatenate((img1, img2), axis=1)
-  cv.imshow("", pack)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
-
-###########################################################
-
-def 
+def mejora(img, sigma):
+  suavizado = p1.gaussianFilter(img, sigma)
+  m, n = img.shape
+  for i in range(m):
+    for j in range(n):
+      
 
 
 def edgeCanny(inImage, sigma, tlow, thigh):
@@ -41,15 +32,15 @@ def edgeCanny(inImage, sigma, tlow, thigh):
 #####
 
 def main():
-  # image = read_img("./imagenes/morphology/closed.png")
-  # image = read_img("./imagenes/grad7.png")
-  image = read_img("./imagenes/lena.png")
+  # image = p1.read_img("./imagenes/morphology/closed.png")
+  # image = p1.read_img("./imagenes/grad7.png")
+  image = p1.read_img("./imagenes/lena.png")
 
-  gx, gy = gradientImage(image, "CentralDiff")
-  gx = adjustIntensity(gx, [], [0,1])
-  gy = adjustIntensity(gy, [], [0,1])
-  show(image, gx)
-  show(image, gy)
+  gx, gy = p1.gradientImage(image, "CentralDiff")
+  gx = p1.adjustIntensity(gx, [], [0,1])
+  gy = p1.adjustIntensity(gy, [], [0,1])
+  p1.show(image, gx)
+  p1.show(image, gy)
 
 if __name__ == "__main__":
   main()
