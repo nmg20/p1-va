@@ -3,28 +3,7 @@ import cv2 as cv
 import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
 import matplotlib.pyplot as plt
-# Funciones auxiliares
-
-def read_img(path):
-  return cv.imread(path, cv.IMREAD_GRAYSCALE)/255.
-
-def show(image):
-  if (image.shape[1]>300):
-    image = imutils.resize(image,width=300)
-  cv.imshow("", image)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
-
-def show2(img1, img2):
-  height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
-  if (width>300):
-    img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
-    img2 = imutils.resize(img2,width=300)
-  # print("Height: ",height,"\tWidth: ",width)
-  pack = np.concatenate((img1, img2), axis=1)
-  cv.imshow("", pack)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
+import p1
 
 def plotHist(inImage, outImage):
   ax1 = plt.subplot(221)
@@ -111,9 +90,9 @@ def equalizeIntensity(inImage, nBins=256):
 #####
 
 def main():
-  # image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/circles1.png")
-  image = read_img("./imagenes/eq.jpg")
+  # image = p1.read_img("./imagenes/circles.png")
+  # image = p1.read_img("./imagenes/circles1.png")
+  image = p1.read_img("./imagenes/eq.jpg")
   image2 = equalizeIntensity(image, 256)
   plotHist(image, image2)
 

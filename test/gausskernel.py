@@ -2,30 +2,12 @@ import numpy as np
 import cv2 as cv
 import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
+import p1
 
 # Dudas:
 # - EqualizeIntensity -> usar numpy.hist o algo asi
 # - FilterImage -> Omitir bordes o añadir padding?
 # - GaussFilter1D -> 0 a N o -centro a centro?
-#
-
-# Funciones auxiliares
-
-def read_img(path):
-  """
-  Devuelve una imagen en punto flotante a partir de su path.
-  return - array (imagen)
-  """
-  return cv.imread(path, cv.IMREAD_GRAYSCALE)/255.
-
-def show(image):
-  """
-  Muestra la imagen proporcionada por pantalla.
-  """
-  cv.imshow("", image)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
-
 #
 
 def gaussKernel1D(sigma): # [1]

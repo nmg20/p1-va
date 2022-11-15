@@ -2,48 +2,7 @@ import numpy as np
 import cv2 as cv
 import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
-
-# Funciones auxiliares
-
-def read_img(path):
-  return cv.imread(path, cv.IMREAD_GRAYSCALE)/255.
-
-def show(image):
-  if (image.shape[1]>300):
-    image = imutils.resize(image,width=300)
-  cv.imshow("", image)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
-
-def show(img1, img2):
-  height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
-  if (width>300):
-    img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
-    img2 = imutils.resize(img2,width=300)
-  # print("Height: ",height,"\tWidth: ",width)
-  pack = np.concatenate((img1, img2), axis=1)
-  cv.imshow("", pack)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
-
-def adjustIntensity(inImage, inRange=[], outRange=[0, 1]): # [2]
-  """
-  Altera el rango dinámico de la imagen.
-  - inRange = Rango de valores de intensidad de entrada.
-  - outRange = Rango de valores de intensidad de salida.
-  """
-  if inRange == []:
-    min_in = np.min(inImage)
-    max_in = np.max(inImage)
-  else :
-    min_in = inRange[0]
-    max_in = inRange[1]
-  min_out = outRange[0]
-  max_out = outRange[1]
-  # print("MinIn: ",min_in,"\tMaxIn: ",max_in,"\n\tMinOut: ",min_out,"\tMaxOut: ",max_out)
-  return min_out + (((max_out - min_out)*inImage - min_in)/(max_in - min_in))
-
-
+import p1
 
 #####
 
@@ -76,29 +35,29 @@ def gradientImage(inImage, operator):
     mx, my = b.T * a, a.T * b
   elif operator == "sSobel":
     mx, my = c.T * a, a.T*c
-  p, q = mx.shape # Se toman las dimensiones de una matriz indistinta de las dos para hacer padding
-  a, b = p//2, q//2
-  pad = cv.copyMakeBorder(inImage,a,a,b,b,cv.BORDER_CONSTANT)
-  for x in range(a,m+a,1):
-    for y in range(b,n+b,1):
-      # Cogemos la ventana de la imagen paddeada
-      window = pad[(x-a):(x+p-a),(y-b):(y+q-b)]
-      gx[x-a,y-b] = (window*mx).sum() # Cambiar por vectores para hacer más eficiente
-      gy[x-a,y-b] = (window*my).sum() # -> matrices linealmente separables
-  return [gx, gy]
+  # p, q = mx.shape # Se toman las dimensiones de una matriz indistinta de las dos para hacer padding
+  # a, b = p//2, q//2
+  # pad = cv.copyMakeBorder(inImage,a,a,b,b,cv.BORDER_CONSTANT)
+  # for x in range(a,m+a,1):
+  #   for y in range(b,n+b,1):
+  #     # Cogemos la ventana de la imagen paddeada
+  #     window = pad[(x-a):(x+p-a),(y-b):(y+q-b)]
+  #     gx[x-a,y-b] = (window*mx).sum() # Cambiar por vectores para hacer más eficiente
+  #     gy[x-a,y-b] = (window*my).sum() # -> matrices linealmente separable
+  return [p1.filterImage(inImage, mx), p1.filterImage(inImage, my)]
 
 #####
 
 def main():
-  # image = read_img("./imagenes/morphology/closed.png")
-  # image = read_img("./imagenes/grad7.png")
-  image = read_img("./imagenes/lena.png")
+  # image = p1.read_img("./imagenes/morphology/closed.png")
+  # image = p1.read_img("./imagenes/grad7.png")
+  image = p1.read_img("./imagenes/lena.png")
 
   gx, gy = gradientImage(image, "CentralDiff")
-  gx = adjustIntensity(gx, [], [0,1])
-  gy = adjustIntensity(gy, [], [0,1])
-  show(image, gx)
-  show(image, gy)
+  gx = p1.adjustIntensity(gx, [], [0,1])
+  gy = p1.adjustIntensity(gy, [], [0,1])
+  p1.show(image, gx)
+  p1.show(image, gy)
 
 if __name__ == "__main__":
   main()
