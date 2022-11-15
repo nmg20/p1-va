@@ -133,51 +133,40 @@ def fill(inImage, seeds, SE=[], center=[]):
     SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
   m, n = inImage.shape
   p, q = SE.shape
+  a, b = p//2, q//2
   if center == []:
-    center=[p//2,q//2]
-  outImage = inImage.copy()
-  inverted = 1-np.asarray(inImage)
+    center=[a, b]
+  outImage = cv.copyMakeBorder(inImage,a,a,b,b,cv.BORDER_CONSTANT, value=1)
+  inverted = 1 - outImage
   # show(inImage, inverted)
   toFill = set([])
   for (sx, sy) in seeds:
-    # print("Seed: (",sx,",",sy,")")
-    toFill.add((sx,sy))
+    # Se ajusta el valor de la seed con el padding
+    toFill.add((sx+a,sy+b))
     while len(toFill)>0:
-      (sx,sy)=toFill.pop()
+      sx,sy=toFill.pop()
       ar, ab, iz, de = sx-center[0], sx+p-center[0], sy-center[1], sy+q-center[1]
-      lar, lab, liz, lde = max(0,ar), min(m,ab), max(0,iz), min(n,de)
-      window = outImage[lar:lab, liz:lde]
-      top = abs(ar) if lar<0 else 0
-      bot = abs(m-ab) if lab>=m else 0
-      lef = abs(iz) if lar<0 else 0
-      rig = abs(n-de) if lde>=n else 0
-      Ac = inverted[lar:lab, liz:lde]
-      SEAux = SE[top:p-bot, lef:q-rig]
-      outImage[lar:lab, liz:lde] = fillWin(window, SEAux, Ac, sx, sy, toFill)
-      f = toFill.copy()
-      # print("Visitados: ")
-      while len(f)>0:
-        a = f.pop()
-      #   # print("\t",a)
-        if a==(0,0):
-          print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
-  return outImage
+      # Se coge siempre una ventana del tamaño del SE
+      window = outImage[ar:ab, iz:de]
+      Ac = inverted[ar:ab, iz:de]
+      outImage[ar:ab, iz:de] = fillWin(window, SE, Ac, sx, sy, toFill)
+  return outImage[a:m+a,b:n+b]
 
 #####
 
 def main():
   # image = read_img("./imagenes/morphology/closed.png")
   # image = read_img("./imagenes/morphology/closed44.png")
-  image = read_img("./imagenes/morphology/closed10.png")
-  # image = read_img("./imagenes/morphology/closed2.png")
+  # image = read_img("./imagenes/morphology/closed10.png")
+  image = read_img("./imagenes/morphology/closed2.png")
   # image = read_img("./imagenes/morphology/closed_cut.png")
 
   ### Erode ###
 
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
-  seeds = [[0,0]]
+  # seeds = [[2,2]]
   # seeds = [[0,4]]
-  # seeds = [[2,2],[8,8]]
+  seeds = [[2,2],[8,8]]
   image2 = fill(image, seeds, [], [])
   show(image, image2)
 

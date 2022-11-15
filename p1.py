@@ -283,7 +283,7 @@ def fillWin(window, SE, Ac, x, y, filled):
   Función auxiliar que llena una región delimitada en una ventana (window), 
   usando SE y el invertido del fondo (Ac) para hacer la dilatación condicional.
     -window: ventana de la imagen a rellenar (tamaño del SE).
-    -Ac: ventana del invertido de la imagen original (tamaño del SE).
+    -Ac: ventana del complementario de la imagen original (tamaño del SE).
     -x, y: coordenadas globales del centro del SE en la imgen.
     -filled: set con las coordenadas de los puntos que se rellenan.
   -> devuelve la matriz de la región rellenada.
@@ -310,24 +310,23 @@ def fill(inImage, seeds, SE=[], center=[]):
     SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
   m, n = inImage.shape
   p, q = SE.shape
+  a, b = p//2, q//2
   if center == []:
-    center=[p//2,q//2]
-  outImage = inImage.copy() # Copia de la imagen sobre la que trabajamos
-  inverted = 1-np.asarray(inImage) # Imagen invertida -> dilatación condicional
-  # show(inImage, inverted)
-  filled = set([])
+    center=[a, b]
+  outImage = cv.copyMakeBorder(inImage,a,a,b,b,cv.BORDER_CONSTANT, value=1)
+  inverted = 1 - outImage
+  toFill = set([])
   for (sx, sy) in seeds:
-    filled.add((sx,sy))
-    while len(filled)>0:
-      (sx,sy)=filled.pop()
-      limar = max(0,sx-center[0])
-      limab = min(m,sx+p-center[0])
-      limizq = max(0,sy-center[1])
-      limder = min(n,sy+q-center[1])
-      window = outImage[limar:limab, limizq:limder]
-      Ac = inverted[limar:limab, limizq:limder]
-      outImage[limar:limab, limizq:limder] = fillWin(window, SE, Ac, sx, sy, filled)
-  return outImage
+    # Se ajusta el valor de la seed con el padding
+    toFill.add((sx+a,sy+b))
+    while len(toFill)>0:
+      sx,sy=toFill.pop()
+      ar, ab, iz, de = sx-center[0], sx+p-center[0], sy-center[1], sy+q-center[1]
+      # Se coge siempre una ventana del tamaño del SE
+      window = outImage[ar:ab, iz:de]
+      Ac = inverted[ar:ab, iz:de]
+      outImage[ar:ab, iz:de] = fillWin(window, SE, Ac, sx, sy, toFill)
+  return outImage[a:m+a,b:n+b]
 
 # Detección de bordes
 
