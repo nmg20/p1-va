@@ -362,7 +362,22 @@ def edgeCanny(inImage, sigma, tlow, thigh):
   Algoritmo de detección de bordes Canny.
     - sigma: Parámetro del filtro gaussiano.
     - tlow, thigh: umbrales de histéresis bajo y alto.
-  """
+  Proceso: 
+    A)Mejora de la imagen.
+      1. Suavizado gaussiano -> J(i,j)
+      2. Para cada píxel  -> calcular gradientes -> Jx/Jy
+                          -> calcular magnitud y orientación de los bordes Em(i,j)
+    B)Supresión no máxima.
+      1. Para cada píxel   -> encontrar dirección dk que aproxime Eo(i,j) (normal al borde)
+      2. Asignar valor al nuevo píxel
+          -> 0 si Es(i,j)<Es(n1) y Es(i,j)<Es(n2) (n1, n2 vecinos en dirección dk)
+          -> Es(i,j) en otro caso
+    C)Umbralización con histéresis.
+      Para todo punto (i,j) en In
+        1. Localizar In+1(i,j) no visitado, tal que In(i,j)>thigh
+        2. A patir de In(i,j) recorrer píxeles conectados.
+          -> marcar puntos recorridos como visitados
+  """ 
   return null
 
 # Operación opcional
