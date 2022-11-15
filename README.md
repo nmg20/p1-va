@@ -11,7 +11,7 @@
 - [x] Dilate()
 - [x] Opening()
 - [x] Closing()
-- [ ] Fill() (?)
+- [x] Fill()
 - [x] GradientImage() (?)
 - [ ] EdgeCanny()
 ### Opcional: 
