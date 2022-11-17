@@ -51,6 +51,7 @@ def suprNoMax(mags, dirs):
   return sup
 
 def umbralizacion(sup, tlow, thigh)
+  
 
 def histeresis()
 
