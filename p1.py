@@ -21,6 +21,13 @@ from skimage import data
 #     -> dilatacion con un kernel con un 0 en 0,0
 
 # -> hacer pruebas en morfología con 8-conectividad
+
+# Por consistencia se especifica que los arrays/matrices empleados
+# deben ser de tipo np.array para poder extraer sus dimensiones
+# siempre de la misma forma -> array.shape
+
+###################################
+
 # Funciones auxiliares
 
 def read_img(path):
@@ -47,15 +54,35 @@ def show(img1, img2):
   """
   Muestra dos imágenes una al lado de otra.
   """
-  height, width = img1.shape[:2]  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
-  if (width>300):
-    img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
-    img2 = imutils.resize(img2,width=300)
+  # height, width = img1.shape  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
+  # if (width>300):
+  #   img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
+  #   img2 = imutils.resize(img2,width=300)
   # print("Height: ",height,"\tWidth: ",width)
   pack = np.concatenate((img1, img2), axis=1)
   cv.imshow("", pack)
   cv.waitKey(0)
   cv.destroyAllWindows()
+
+def showFull(img1, img2):
+  """
+  Muestra dos imágenes con cualquier dimensión
+  """
+  pack = np.concatenate((img1, img2), axis=1)
+  cv.imshow("", pack)
+  cv.waitKey(0)
+  cv.destroyAllWindows()
+
+def umbr(image, thres):
+  m, n = image.shape
+  u = np.zeros((m,n), dtype='float32')
+  for i in range(m):
+    for j in range(n):
+      if(image[i][j]>thres):
+        u[i][j]=1.0
+  return u
+
+##################################
 
 # Histogramas: mejora de contraste
 
@@ -100,10 +127,10 @@ def equalizeIntensity(inImage, nBins=256):  # [1]
 def filterImage(inImage, kernel): # [2]
   """
   Aplica un filtro mediante convolución de un kernel sobre una imagen.
-  - kernel = array/matriz de coeficientes
+  - kernel = array/matriz de coeficientes (de tipo np.array -> para poder sacar .shape)
   """
-  m, n = np.shape(inImage) # Tamaño de la imagen
-  p, q = np.shape(kernel) # Tamaño del kernel
+  m, n = inImage.shape # Tamaño de la imagen
+  p, q = kernel.shape # Tamaño del kernel
   a = p // 2
   b = q // 2
   outImage = np.zeros((m,n), dtype='float32') # Img resultado de menor tamaño
@@ -155,7 +182,7 @@ def medianFilter(inImage, filterSize):
   Suaviza una imagen mediante un filtro de medianas bidimensional. 
   El tamaño del kernel del filtro viene dado por filterSize.
   """
-  m, n = np.shape(inImage)
+  m, n = inImage.shape
   outImage = np.zeros((m,n), dtype='float32')
   centro = filterSize//2
   for x in range(m):
@@ -205,8 +232,8 @@ def erode(inImage, SE, center=[]):
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  m, n = np.shape(inImage)
-  p, q = np.shape(SE)
+  m, n = inImage.shape
+  p, q = SE.shape
   outImage = np.zeros((m,n), dtype='float32')
   padH, padV = p//2, q//2
   if center==[]:
@@ -235,8 +262,8 @@ def dilate(inImage, SE, center=[]):
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
-  m, n = np.shape(inImage)
-  p, q = np.shape(SE)
+  m, n = inImage.shape
+  p, q = SE.shape
   outImage = np.zeros((m,n), dtype='float32')
   padH, padV = p//2, q//2
   if center==[]:
@@ -348,13 +375,13 @@ def gradientImage(inImage, operator):
   if operator == "Roberts":
     mx, my = np.array([[-1,0],[0,1]]), np.array([[0,-1],[1,0]])
   elif operator == "CentralDiff":
-    mx, my = a.T * d, d.T * a
+    mx1, mx2, my1, my2 = a.T, d, d.T, a
   elif operator == "Prewitt":
-    mx, my = b.T * a, a.T * b
+    mx1, mx2, my1, my2 = b.T, a, a.T, b
   elif operator == "Sobel":
-    mx, my = c.T * a, a.T*c
-  gx = filterImage(inImage, mx)
-  gy = filterImage(inImage, my)
+    mx1, mx2, my1, my2 = c.T,  a, a.T, c
+  gx = filterImage(filterImage(inImage, mx1),mx2)
+  gy = filterImage(filterImage(inImage, my1), my2)
   return [gx, gy]
 
 def edgeCanny(inImage, sigma, tlow, thigh):
@@ -467,7 +494,7 @@ def main():
   # image = read_img("./imagenes/morphology/diagonal.png")
   # image = read_img("./imagenes/morphology/blob.png")
   # image = read_img("./imagenes/morphology/a34.png")
-  image = read_img("./imagenes/morphology/ex.png")
+  # image = read_img("./imagenes/morphology/ex.png")
 
   #
   # Test de Erode
@@ -480,9 +507,9 @@ def main():
   # Test de Dilate
   #
   # SE = [[0,1,0],[1,1,1],[0,1,0]]
-  SE = [[0,1,0],[1,0,1],[0,1,0]]
-  image2 = dilate(image, SE, [])
-  show(image, image2)
+  # SE = [[0,1,0],[1,0,1],[0,1,0]]
+  # image2 = dilate(image, SE, [])
+  # show(image, image2)
 
   #
   # Test de Opening
