@@ -6,13 +6,10 @@ from skimage import data
 
 ############################################################
 # Dudas:
-# - HighBoost -> adjustIntensity con A?
-# A COMO UMBRAL DE ENTRADA
+# Canny: -> en la umbralización usar 4 u 8 vecindad
 # - Añadir padding para los operadores morfológicos    
 # NO NECESARIO        
 #   -> en erode funciona(?) -> saber si hay casos en los que pueda fallar
-# Fill debería funcionar en fondos/ figuras cortadas por los bordes de la imagen?
-# -> OBVIAMENTE SI xd
 # Gradient -> Operador de CentralDiff 
 #     -> [-1,0,1].T*[-1,0,1]?
 ############################################################
@@ -252,13 +249,14 @@ def erode(inImage, SE, center=[]):
         for j in range(q):
           if window[i][j]==0 and SE[i][j]==1:
             outImage[x-padH, y-padV]=0
+          # outImage[x-padH, y-padV]=min(window[i][j],SE[i][j])
   return outImage
 
 def dilate(inImage, SE, center=[]):
   """
   Aplica el operador morfológico de dilatación.
     - inImage: imagen -> conjuntos de posiciones con 1s.
-    - SE: elemento estructurante.
+    - SE: elemento estructurante (con valores binarios).
     - center: origen del SE. Se asume que el [0, 0] es la esquina
         superior izquierda. Si está vacío, el centro es ([P/2]+1, [Q/2]+1).
   """
@@ -280,9 +278,11 @@ def dilate(inImage, SE, center=[]):
       # Se comprueba que se dilata la región en torno al píxel
       for i in range(p):
         for j in range(q):
-          if window[i][j]==1 and SE[i][j]==1:
+          # if window[i][j]==1 and SE[i][j]==1:
+          if window[i][j]==1:
           # if window[i][j]==1:
             outImage[x-padH, y-padV]=SE[i][j]
+            # outImage[x-padH, y-padV]=min(window[i][j],SE[i][j])
   return outImage
 
 def opening(inImage, SE, center=[]):
@@ -384,6 +384,59 @@ def gradientImage(inImage, operator):
   gy = filterImage(filterImage(inImage, my1), my2)
   return [gx, gy]
 
+def mejora(img, sigma):
+  """
+  Devuelve una matriz con las direcciones y otra con las magnitudes.
+  """
+  suavizado = p1.gaussianFilter(img, sigma)
+  gx, gy = p1.gradientImage(suavizado, "Sobel")
+  gtotal = np.sqrt((gx**2)+(gy**2))
+  em = direcciones(gx, gy)
+  return em, gtotal
+
+def suprNoMax(mags, dirs):
+  """
+  Aplica supresión no máxima a los bordes de la imagen para obtener
+  bordes de 1 pixel de grosor.
+  """
+  m,n = mags.shape
+  sup = np.zeros((m,n), dtype='float32')
+  for i in range(1,m-1):
+    for j in range(1,n-1):
+      n1, n2 = 0,0
+      # Horizontal
+      if (0<dirs[i,j]<22.5 or 157.5<dirs[i,j]<180):
+        n1, n2 = mags[i,j-1], mags[i,j+1]
+      # Vertical
+      elif (67.5<dirs[i,j]<112.5):
+        n1, n2 = mags[i-1,j], mags[i+1,j]
+      # Diagonal Ascendente
+      elif (22.5<dirs[i,j]<67.5):
+        n1, n2 = mags[i+1,j+1], mags[i-1,j-1]
+      # Diagonal Descendente
+      elif (112.5<dirs[i,j]<157.5):
+        n1, n2 = mags[i+1,j-1], mags[i-1,j+1]
+      # Comprobar si es máximo
+      if (mags[i,j]>n1 and mags[i,j]>n2):
+        sup[i,j]=mags[i,j]
+  return sup
+
+def umbralizacionConHisteresis(sup, tlow, thigh):
+  """
+  Se obtiene una imagen umbralizada a partir del resultado de aplicar
+  la supresión no máxima.
+  Se aunan todos los bordes, juntando los débiles con los fuertes si están 4-conectados.
+  """
+  m, n = sup.shape
+  umbr = np.zeros((m,n), dtype='float32')
+  for i in range(m):
+    for j in range(n):
+      # Se comprueba si el valor sobrepasa el umbral o está 4-conectado a un máximo
+      if (sup[i,j]>thigh) or ((sup[i+1,j]+sup[i-1,j]+sup[i,j+1]+sup[i,j-1])>0):
+        umbr[i,j]=1.0
+  return umbr
+
+
 def edgeCanny(inImage, sigma, tlow, thigh):
   """
   Algoritmo de detección de bordes Canny.
@@ -405,7 +458,10 @@ def edgeCanny(inImage, sigma, tlow, thigh):
         2. A patir de In(i,j) recorrer píxeles conectados.
           -> marcar puntos recorridos como visitados
   """ 
-  return null
+  direcciones, magnitudes = mejora(inImage,sigma)
+  supresion = suprNoMax(magnitudes, direcciones)
+  umbralizado = umbralizacionConHisteresis(supresion,tlow, thigh)
+  return umbralizado
 
 # Operación opcional
 
@@ -422,15 +478,15 @@ def main():
   #
   #  Test de adjustIntensity
   #
-  # image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("../imagenes/circles.png")
+  # image = read_img("../imagenes/circles1.png")
   # image2 = adjustIntensity(image, [0, 0.5], [0, 1])
   # show(image,image2)
 
   #
   #  Test de equalizeIntensity
   
-  # image = read_img("./imagenes/eq.jpg")
+  # image = read_img("../imagenes/eq.jpg")
   # image2 = equalizeIntensity(image, 256)
   # show(image,image2)
 
@@ -439,8 +495,8 @@ def main():
   #
   #  Test de filterImage
   #
-  # image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("../imagenes/circles.png")
+  # image = read_img("../imagenes/circles1.png")
   # kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
   # kernel = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
   #   [1,1,1,1,1],[1,1,1,1,1]]
@@ -454,9 +510,9 @@ def main():
   #
   # Test de gaussKernel1D
   #
-  # image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/circles1.png")
-  # image = read_img("./imagenes/saltgirl.png")
+  # image = read_img("../imagenes/circles.png")
+  # image = read_img("../imagenes/circles1.png")
+  # image = read_img("../imagenes/saltgirl.png")
   kernel1 = gaussKernel1D(0.5)
   # matrix = kernel1 * kernel1.T
   # print("Matriz: \n",matrix)
@@ -466,48 +522,51 @@ def main():
   #
   # Test de gaussianFilter
   #
-  # image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/circles1.png")
-  # image = read_img("./imagenes/saltgirl.png")
+  # image = read_img("../imagenes/circles.png")
+  # image = read_img("../imagenes/circles1.png")
+  # image = read_img("../imagenes/saltgirl.png")
   # image2 = gaussianFilter(image, 1)
   # show(image,image2)
 
   #
   # Test de medanFilter
   #
-  # image = read_img("./imagenes/saltgirl.png")
+  # image = read_img("../imagenes/saltgirl.png")
   # image2 = medianFilter(image, 5)
   # show(image, image2)
 
   #
   # Test de highBoost
   #
-  # image = read_img("./imagenes/circles.png")
-  # image = read_img("./imagenes/saltgirl.png")
-  # image = read_img("./test/pruebas/blur.png")
+  # image = read_img("../imagenes/circles.png")
+  # image = read_img("../imagenes/saltgirl.png")
+  # image = read_img("../test/pruebas/blur.png")
   # image2 = highBoost(image, 3, 'gaussian', 1)
   # image2 = highBoost(image, 2, 'median', 3)
   # show(image, image2)
 
   ##### Operadores Morfológicos
 
-  # image = read_img("./imagenes/morphology/diagonal.png")
-  # image = read_img("./imagenes/morphology/blob.png")
-  # image = read_img("./imagenes/morphology/a34.png")
-  # image = read_img("./imagenes/morphology/ex.png")
+  # image = read_img("../imagenes/morphology/diagonal.png")
+  # image = read_img("../imagenes/morphology/blob.png")
+  # image = read_img("../imagenes/morphology/a34.png")
+  # image = read_img("../imagenes/morphology/ex.png")
 
   #
   # Test de Erode
   #
-  # SE = [[1,1],[1,1]]
+  # SE = np.array([[1,1],[1,1]])
+  # SE = np.array([[0,1,0],[0,1,0],[0,1,0]])
+  # SE = np.array([[1,1,1],[1,0,1],[1,1,1]])
   # image2 = erode(image, SE, [])
   # show(image, image2)
 
   #
   # Test de Dilate
   #
-  # SE = [[0,1,0],[1,1,1],[0,1,0]]
-  # SE = [[0,1,0],[1,0,1],[0,1,0]]
+  # SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
+  # SE = np.array([[0,1,0],[1,0,1],[0,1,0]])
+  # SE = np.array([[1,1,1],[1,0,1],[1,1,1]])
   # image2 = dilate(image, SE, [])
   # show(image, image2)
 
@@ -530,10 +589,10 @@ def main():
   #
   # Test de Fill
   #
-  # image = read_img("./imagenes/morphology/closed.png")
-  # image = read_img("./imagenes/morphology/closed44.png")
-  # image = read_img("./imagenes/morphology/closed10.png")
-  # image = read_img("./imagenes/morphology/closed2.png")
+  # image = read_img("../imagenes/morphology/closed.png")
+  # image = read_img("../imagenes/morphology/closed44.png")
+  # image = read_img("../imagenes/morphology/closed10.png")
+  # image = read_img("../imagenes/morphology/closed2.png")
   # seeds = [[1,1]]
   # seeds = [[5,5]]
   # seeds = [[2,2],[8,8]]
@@ -543,9 +602,9 @@ def main():
   #
   # Test de GradientImage
   #
-  # image = read_img("./imagenes/morphology/closed.png")
-  # image = read_img("./imagenes/grad7.png")
-  # image = read_img("./imagenes/lena.png")
+  # image = read_img("../imagenes/morphology/closed.png")
+  # image = read_img("../imagenes/grad7.png")
+  # image = read_img("../imagenes/lena.png")
   # gx, gy = gradientImage(image, "Roberts")
   # gx = adjustIntensity(gx, [], [0,1])
   # gy = adjustIntensity(gy, [], [0,1])
