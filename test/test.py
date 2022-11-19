@@ -3,6 +3,35 @@ import sys
 sys.path.append('../')
 import p1
 
+"""
+Notación => N -> no está hecho lmao
+            X -> pasa algo raro
+            ~ -> no probado a fondo
+            V -> ta piola
+            S -> perfecto
+
+Pruebas realizadas:
+  -adjustIntensity S
+  -equalizeIntensity ~
+  -filterImage S
+  -gaussKernel1D X
+  -gaussianFilter V
+  -medianFilter V
+  -highBoost V
+  -erode
+  -dilate
+  -opening
+  -closing
+  -fill
+  -gradientImage
+  -edgeCanny
+  -cornerHarris N
+
+"""
+
+
+
+
 # funs = ["adj","eq","filt","gkern","gfilt","med","hboost",
 #         "erode","dil","open","close","fill","grad","canny",
 #         "harris"]
