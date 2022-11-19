@@ -371,18 +371,16 @@ def gradientImage(inImage, operator):
   b = np.array([[1,1,1]])
   c = np.array([[1,2,1]])
   d = np.array([[0,1,0]])
-  
   if operator == "Roberts":
     mx, my = np.array([[-1,0],[0,1]]), np.array([[0,-1],[1,0]])
   elif operator == "CentralDiff":
-    mx1, mx2, my1, my2 = a.T, d, d.T, a
+    mx, my = a.T*d, d.T*a # Deberían ser el vector a y su transpuesta (no funciona x alguna razon)
   elif operator == "Prewitt":
-    mx1, mx2, my1, my2 = b.T, a, a.T, b
+    mx, my = b.T * a, a.T * b
   elif operator == "Sobel":
-    mx1, mx2, my1, my2 = c.T,  a, a.T, c
-  gx = filterImage(filterImage(inImage, mx1),mx2)
-  gy = filterImage(filterImage(inImage, my1), my2)
-  return [gx, gy]
+    mx, my = c.T * a, a.T*c
+  return [filterImage(inImage, mx), filterImage(inImage, my)]
+
 
 def mejora(img, sigma):
   """
@@ -589,10 +587,10 @@ def main():
   #
   # Test de Fill
   #
-  # image = read_img("../imagenes/morphology/closed.png")
-  # image = read_img("../imagenes/morphology/closed44.png")
-  # image = read_img("../imagenes/morphology/closed10.png")
-  # image = read_img("../imagenes/morphology/closed2.png")
+  # image = read_img("./imagenes/morphology/closed.png")
+  # image = read_img("./imagenes/morphology/closed44.png")
+  # image = read_img("./imagenes/morphology/closed10.png")
+  # image = read_img("./imagenes/morphology/closed2.png")
   # seeds = [[1,1]]
   # seeds = [[5,5]]
   # seeds = [[2,2],[8,8]]
@@ -602,14 +600,14 @@ def main():
   #
   # Test de GradientImage
   #
-  # image = read_img("../imagenes/morphology/closed.png")
-  # image = read_img("../imagenes/grad7.png")
-  # image = read_img("../imagenes/lena.png")
-  # gx, gy = gradientImage(image, "Roberts")
-  # gx = adjustIntensity(gx, [], [0,1])
-  # gy = adjustIntensity(gy, [], [0,1])
-  # show(image, gx)
-  # show(image, gy)
+  # image = read_img("./imagenes/morphology/closed.png")
+  # image = read_img("./imagenes/grad7.png")
+  image = read_img("./imagenes/lena.png")
+  gx, gy = gradientImage(image, "Sobel")
+  gx = adjustIntensity(gx, [], [0,1])
+  gy = adjustIntensity(gy, [], [0,1])
+  show(image, gx)
+  show(image, gy)
 
 if __name__ == "__main__":
   main()
