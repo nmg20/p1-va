@@ -67,7 +67,7 @@ def umbralizacionConHisteresis(sup, tlow, thigh):
       if (supAux[i,j]>thigh):
         umbr[i-1,j-1]=1.0
       # Sino, se comprueba si está 4-conectado a un valor que sobrepase thigh
-      elif (supAux[i,j]>tlow) and ((supAux[i+1,j]+supAux[i-1,j]+supAux[i,j+1]+supAux[i,j-1])>0):
+      elif (supAux[i,j]>tlow) and (np.any(supAux[i-1:i+2,j-1:j+2])):
         umbr[i-1,j-1]=1.0
   return umbr
 
