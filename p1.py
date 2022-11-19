@@ -6,13 +6,13 @@ from skimage import data
 
 ############################################################
 # Dudas:
-# Canny: -> en la umbralización usar 4 u 8 vecindad
-# - Añadir padding para los operadores morfológicos    
-# NO NECESARIO        
-#   -> en erode funciona(?) -> saber si hay casos en los que pueda fallar
-# Gradient -> Operador de CentralDiff 
-#     -> [-1,0,1].T*[-1,0,1]?
+# Canny: -> en la umbralización usar 4 u 8 vecindad    
+# Harris en general
+# GaussKernel -> 
 ############################################################
+
+# Comprobar HighBoost
+# ->adjustIntensity en median(?)
 
 # -> mirar morfologia con kernels destructivos
 #     -> dilatacion con un kernel con un 0 en 0,0
@@ -51,10 +51,10 @@ def show(img1, img2):
   """
   Muestra dos imágenes una al lado de otra.
   """
-  # height, width = img1.shape  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
-  # if (width>300):
-  #   img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
-  #   img2 = imutils.resize(img2,width=300)
+  height, width = img1.shape  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
+  if (width>300):
+    img1 = imutils.resize(img1,width=300) #Resize proporcional sólo para mostrar las imágenes
+    img2 = imutils.resize(img2,width=300)
   # print("Height: ",height,"\tWidth: ",width)
   pack = np.concatenate((img1, img2), axis=1)
   cv.imshow("", pack)
@@ -63,21 +63,30 @@ def show(img1, img2):
 
 def showFull(img1, img2):
   """
-  Muestra dos imágenes con cualquier dimensión
+  Muestra dos imágenes con cualquier dimensión.
   """
   pack = np.concatenate((img1, img2), axis=1)
   cv.imshow("", pack)
   cv.waitKey(0)
   cv.destroyAllWindows()
 
-def umbr(image, thres):
-  m, n = image.shape
-  u = np.zeros((m,n), dtype='float32')
-  for i in range(m):
-    for j in range(n):
-      if(image[i][j]>thres):
-        u[i][j]=1.0
-  return u
+# def umbr(image, thres):
+#   m, n = image.shape
+#   u = np.zeros((m,n), dtype='float32')
+#   for i in range(m):
+#     for j in range(n):
+#       if(image[i][j]>thres):
+#         u[i][j]=1.0
+#   return u
+
+  def umbr(image, thres):
+    """
+    Umbraliza una imagen dado un threshold.
+    """
+    u = image.copy()
+    u[u<thres]=0
+    u[u>=thres]=1
+    return u
 
 ##################################
 
@@ -124,6 +133,8 @@ def equalizeIntensity(inImage, nBins=256):  # [1]
 def filterImage(inImage, kernel): # [2]
   """
   Aplica un filtro mediante convolución de un kernel sobre una imagen.
+  Antes de recorrer la imagen se le aplica un padding de tamaño p//2 y q//2,
+  de esta forma la ventana siempre coge valores no nulos.
   - kernel = array/matriz de coeficientes (de tipo np.array -> para poder sacar .shape)
   """
   m, n = inImage.shape # Tamaño de la imagen
@@ -135,7 +146,6 @@ def filterImage(inImage, kernel): # [2]
   for x in range(a, m+a, 1):
     for y in range(b, n+b, 1):
       window = padded[(x-a):(x+p-a),(y-b):(y+q-b)]
-      # print("Window:\t(",x-a,"---",x+p-a,")\n\t(",y-b,"---",y+q-b)
       outImage[x-a,y-b] = (window * kernel).sum()
   return outImage
 
@@ -150,8 +160,9 @@ def gaussKernel1D(sigma): # [1]
   """
   n = 2 * math.ceil(3*sigma)+1
   centro = math.floor(n/2)
+  # print("Size:",n,"\nCentro:",centro)
   kernel = np.zeros((1,n), dtype='float32')
-  div = 1/math.sqrt(2*math.pi*sigma)
+  div = 1/math.sqrt(2*math.pi)*sigma
   exp = 2 * sigma**2
   for x in range(-centro,centro+1):
     kernel[0,x+centro] = div * math.exp(-x**2/exp)
@@ -381,10 +392,25 @@ def gradientImage(inImage, operator):
     mx, my = c.T * a, a.T*c
   return [filterImage(inImage, mx), filterImage(inImage, my)]
 
+def direcciones(gx, gy):
+  """
+  Dadas dos matrices con los gradientes, registra para cada punto su dirección.
+    -> arcotangente expresada en grados.
+  """
+  m,n = gx.shape
+  d = np.zeros((m,n), dtype='float32')
+  for i in range(m):
+    for j in range(n):
+      d[i,j]=np.arctan2(gy[i,j],gx[i,j])*180/np.pi
+      if d[i,j]<0:
+        d[i,j]=d[i,j]+180
+  return d
+
 
 def mejora(img, sigma):
   """
   Devuelve una matriz con las direcciones y otra con las magnitudes.
+  Aplica un suavizado gaussiano para reducir la influencia del ruido.
   """
   suavizado = p1.gaussianFilter(img, sigma)
   gx, gy = p1.gradientImage(suavizado, "Sobel")
@@ -401,6 +427,7 @@ def suprNoMax(mags, dirs):
   sup = np.zeros((m,n), dtype='float32')
   for i in range(1,m-1):
     for j in range(1,n-1):
+      # Vecinos para comparar máximos
       n1, n2 = 0,0
       # Horizontal
       if (0<dirs[i,j]<22.5 or 157.5<dirs[i,j]<180):
@@ -465,52 +492,59 @@ def edgeCanny(inImage, sigma, tlow, thigh):
 
 def cornerHarris(inImage, sigmaD, sigmaI, t):
   """
-
+  Operador Harris de detección de esquinas. 
+    - sigmaD: escala de diferenciación.
+    - sigmaI: escala de integración.
+    - t: umbral de detección de esquinas.
+    -> outCorners: mapa tras supresión no máxima y umbralización.
+    -> harrisMap: cálculo de la métrica Harris para cada punto.
   """
-  return null
+  return outCorners, harrisMap
 
 
 
 def main():
 
   #
-  #  Test de adjustIntensity
+  #  Test de AdjustIntensity [v]
   #
-  # image = read_img("../imagenes/circles.png")
-  # image = read_img("../imagenes/circles1.png")
-  # image2 = adjustIntensity(image, [0, 0.5], [0, 1])
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
+  # image2 = adjustIntensity(image, [0, 1], [0.2, 0.6]) # Oscurece la imagen
+  # image2 = adjustIntensity(image, [], [1, 0]) # Invierte la imagen
   # show(image,image2)
 
   #
-  #  Test de equalizeIntensity
+  #  Test de EqualizeIntensity [~]
   
-  # image = read_img("../imagenes/eq.jpg")
+  # image = read_img("./imagenes/eq.jpg")
   # image2 = equalizeIntensity(image, 256)
   # show(image,image2)
 
   #####
 
   #
-  #  Test de filterImage
+  #  Test de FilterImage [v]
   #
-  # image = read_img("../imagenes/circles.png")
-  # image = read_img("../imagenes/circles1.png")
-  # kernel = [[0,1,0],[1,1,1],[0,1,0]]  # Aclara la imagen
-  # kernel = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
-  #   [1,1,1,1,1],[1,1,1,1,1]]
-  # kernel = [[0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5],
-  #   [0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5]]
-  # kernel = [[0,0.1,0],[0.1,0.1,0.1],[0,0.1,0]] # Oscurece la imagen
-  # kernel = [[0,0.5,0],[0.5,0.5,0.5],[0,0.5,0]] # Aclara la imagen
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
+  # kernel = np.array([[0,1,0],[1,1,1],[0,1,0]])
+  # kernel = np.array([[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],
+  #   [1,1,1,1,1],[1,1,1,1,1]])
+  # kernel = np.array([[0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5],
+  #   [0.5,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,0.5,0.5]])
+  # kernel = np.array([[0,0,0,0],[1,1,1,1],[0,0,0,0]]) # Blur Horizontal
+  # kernel = np.array([[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0]]) # Blur vertical
   # image2 = filterImage(image, kernel)
+  # show(image,adjustIntensity(image2,[],[0,1]))
   # show(image,image2)
 
   #
-  # Test de gaussKernel1D
+  # Test de GaussKernel1D [x]
   #
-  # image = read_img("../imagenes/circles.png")
-  # image = read_img("../imagenes/circles1.png")
-  # image = read_img("../imagenes/saltgirl.png")
+  # image = read_img("./imagenes/circles.png")
+  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/saltgirl.png")
   kernel1 = gaussKernel1D(0.5)
   # matrix = kernel1 * kernel1.T
   # print("Matriz: \n",matrix)
@@ -518,37 +552,41 @@ def main():
   # show(image,image2)
 
   #
-  # Test de gaussianFilter
+  # Test de GaussianFilter
   #
-  # image = read_img("../imagenes/circles.png")
-  # image = read_img("../imagenes/circles1.png")
-  # image = read_img("../imagenes/saltgirl.png")
-  # image2 = gaussianFilter(image, 1)
+  # image = read_img("./imagenes/circles1.png")
+  # image = read_img("./imagenes/saltgirl.png")
+  # image2 = gaussianFilter(image, 1.5)
+  # show(image,adjustIntensity(image2,[],[0,1]))
   # show(image,image2)
 
   #
-  # Test de medanFilter
+  # Test de MedianFilter [v]
   #
-  # image = read_img("../imagenes/saltgirl.png")
+  # image = read_img("./imagenes/saltgirl.png")
+  # image = read_img("./imagenes/lena.png")
   # image2 = medianFilter(image, 5)
+  # image2 = medianFilter(image, 9) # Se difumina más
   # show(image, image2)
 
   #
-  # Test de highBoost
+  # Test de HighBoost [~]
   #
-  # image = read_img("../imagenes/circles.png")
-  # image = read_img("../imagenes/saltgirl.png")
-  # image = read_img("../test/pruebas/blur.png")
-  # image2 = highBoost(image, 3, 'gaussian', 1)
-  # image2 = highBoost(image, 2, 'median', 3)
-  # show(image, image2)
+  # image = read_img("./imagenes/circles.png")
+  image = read_img("./imagenes/lena.png")
+  # image = read_img("./imagenes/blur.jpg")
+  image2 = highBoost(image, 3, 'gaussian', 1)
+  # image2 = highBoost(image, 1, 'gaussian', 1) # Laplaciano
+  # image2 = highBoost(image, 1.5, 'median', 3)
+  # show(image,adjustIntensity(image2,[],[0,1]))
+  show(image, image2)
 
   ##### Operadores Morfológicos
 
-  # image = read_img("../imagenes/morphology/diagonal.png")
-  # image = read_img("../imagenes/morphology/blob.png")
-  # image = read_img("../imagenes/morphology/a34.png")
-  # image = read_img("../imagenes/morphology/ex.png")
+  # image = read_img("./imagenes/morphology/diagonal.png")
+  # image = read_img("./imagenes/morphology/blob.png")
+  # image = read_img("./imagenes/morphology/a34.png")
+  # image = read_img("./imagenes/morphology/ex.png")
 
   #
   # Test de Erode
@@ -602,12 +640,16 @@ def main():
   #
   # image = read_img("./imagenes/morphology/closed.png")
   # image = read_img("./imagenes/grad7.png")
-  image = read_img("./imagenes/lena.png")
-  gx, gy = gradientImage(image, "Sobel")
-  gx = adjustIntensity(gx, [], [0,1])
-  gy = adjustIntensity(gy, [], [0,1])
-  show(image, gx)
-  show(image, gy)
+  # image = read_img("./imagenes/lena.png")
+  # gx, gy = gradientImage(image, "Sobel")
+  # gx = adjustIntensity(gx, [], [0,1])
+  # gy = adjustIntensity(gy, [], [0,1])
+  # show(image, gx)
+  # show(image, gy)
+
+  #
+  # Test de EdgeCanny
+  #
 
 if __name__ == "__main__":
   main()
