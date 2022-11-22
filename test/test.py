@@ -106,6 +106,64 @@ def main(args):
 # Se pueden probar con cada imagen individualmente o contra un pool
 #   -> maybe pool específico para cada función(?)
 
+############## TESTS ##############
+
+# AdjustIntensity
+# -> probar a oscurecer/aclarar imágenes
+# -> rangos invertidos deberían invertir la imagen tb
+
+# EqualizeIntensity
+# -> probar con varias imágenes -> usar adjustIntensity para modificarlas
+
+# FilterImage
+# -> Blur vertical/horizontal/diagonal(?)
+# -> comprobar que elimina ruido impulsional
+# -> checkear eficiencia -> padding
+
+# GaussKernel1D
+# -> probar que N está bien
+# -> comprobar que genera bien los coeficientes
+
+# GaussianFilter
+# -> comprobar diferencia computacional entre vectores y matrices
+# -> probar que elimina ruido impulsional
+# -> proar para sigmas distintos
+
+# MeanFilter
+# -> probar que elimina ruido impulsional
+
+# HighBoost
+# -> probar con imágenes borrosas
+# -> con A=1 -> Laplaciano
+# -> algo con medianas (idk)
+
+# Erode
+# -> 0 en el origen
+#
+
+# Dilate
+# -> 0 en el origen
+
+# Opening/Closing
+# -> usarlos como filtros de formas
+
+# Fill
+# -> bordes sin esquinas con vecindad 4 y 8 (SE)
+# -> probar varios SEs
+# -> probar varias seeds (muchas/desordenadas)
+
+# GradientImage
+# -> comprobar con todos los operadores
+# -> ???
+
+# EdgeCanny 
+# -> probar con varios valores de threshold
+
+# CornerHarris
+#
+#
+
+###################################
 
 if __name__ == "__main__":
   parser = argp.ArgumentParser(description=".")
