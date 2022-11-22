@@ -4,24 +4,31 @@ import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
 from skimage import data
 
+####
+# Por consistencia se especifica que los arrays/matrices empleados
+# deben ser de tipo np.array para poder extraer sus dimensiones
+# siempre de la misma forma -> array.shape
+####
+
+
 ############################################################
 # Dudas:
+# SEs como arrays normales o como np.array?
+# adjustIntensity en HighBoost  -> (dentro de la función?)
+#                               -> tener en cuenta A en el rango de entrada?
+# Erode con 0 en (0,0)
 # Canny: -> en la umbralización usar 4 u 8 vecindad    
+#   -> valores de umbrales para hacer testing
 # Harris en general
 # GaussKernel -> 
 ############################################################
-
-# Comprobar HighBoost
-# ->adjustIntensity en median(?)
 
 # -> mirar morfologia con kernels destructivos
 #     -> dilatacion con un kernel con un 0 en 0,0
 
 # -> hacer pruebas en morfología con 8-conectividad
-
-# Por consistencia se especifica que los arrays/matrices empleados
-# deben ser de tipo np.array para poder extraer sus dimensiones
-# siempre de la misma forma -> array.shape
+# -> probar casos de morfología especificando centro
+# -> comprobar dilatación -> 0 en el origen
 
 ###################################
 
@@ -37,7 +44,7 @@ def read_img(path):
 def save_img(img, name):
   cv.imwrite(name, 255*img)
 
-def show(image):
+def show1(image):
   """
   Muestra la imagen proporcionada por pantalla.
   """
@@ -61,32 +68,23 @@ def show(img1, img2):
   cv.waitKey(0)
   cv.destroyAllWindows()
 
-def showFull(img1, img2):
-  """
-  Muestra dos imágenes con cualquier dimensión.
-  """
-  pack = np.concatenate((img1, img2), axis=1)
-  cv.imshow("", pack)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
+# def showFull(img1, img2):
+#   """
+#   Muestra dos imágenes con cualquier dimensión.
+#   """
+#   pack = np.concatenate((img1, img2), axis=1)
+#   cv.imshow("", pack)
+#   cv.waitKey(0)
+#   cv.destroyAllWindows()
 
-# def umbr(image, thres):
-#   m, n = image.shape
-#   u = np.zeros((m,n), dtype='float32')
-#   for i in range(m):
-#     for j in range(n):
-#       if(image[i][j]>thres):
-#         u[i][j]=1.0
-#   return u
-
-  def umbr(image, thres):
-    """
-    Umbraliza una imagen dado un threshold.
-    """
-    u = image.copy()
-    u[u<thres]=0
-    u[u>=thres]=1
-    return u
+def umbr(image, thres):
+  """
+  Umbraliza una imagen dado un threshold.
+  """
+  u = image.copy()
+  u[u<thres]=0
+  u[u>=thres]=1
+  return u
 
 ##################################
 
@@ -260,7 +258,7 @@ def erode(inImage, SE, center=[]):
         for j in range(q):
           if window[i][j]==0 and SE[i][j]==1:
             outImage[x-padH, y-padV]=0
-          # outImage[x-padH, y-padV]=min(window[i][j],SE[i][j])
+            # outImage[x-padH, y-padV]=min(window[i][j],SE[i][j])
   return outImage
 
 def dilate(inImage, SE, center=[]):
@@ -289,8 +287,7 @@ def dilate(inImage, SE, center=[]):
       # Se comprueba que se dilata la región en torno al píxel
       for i in range(p):
         for j in range(q):
-          # if window[i][j]==1 and SE[i][j]==1:
-          if window[i][j]==1:
+          if window[i][j]==1 and SE[i][j]==1:
           # if window[i][j]==1:
             outImage[x-padH, y-padV]=SE[i][j]
             # outImage[x-padH, y-padV]=min(window[i][j],SE[i][j])
@@ -386,6 +383,7 @@ def gradientImage(inImage, operator):
     mx, my = np.array([[-1,0],[0,1]]), np.array([[0,-1],[1,0]])
   elif operator == "CentralDiff":
     mx, my = a.T*d, d.T*a # Deberían ser el vector a y su transpuesta (no funciona x alguna razon)
+    mx, my = a.T*d, d.T*a # Deberían ser el vector a y su transpuesta (no funciona x alguna razon)
   elif operator == "Prewitt":
     mx, my = b.T * a, a.T * b
   elif operator == "Sobel":
@@ -396,6 +394,7 @@ def direcciones(gx, gy):
   """
   Dadas dos matrices con los gradientes, registra para cada punto su dirección.
     -> arcotangente expresada en grados.
+    -> si son ángulos negativos se devuelve su inverso (+180º)
   """
   m,n = gx.shape
   d = np.zeros((m,n), dtype='float32')
@@ -412,8 +411,8 @@ def mejora(img, sigma):
   Devuelve una matriz con las direcciones y otra con las magnitudes.
   Aplica un suavizado gaussiano para reducir la influencia del ruido.
   """
-  suavizado = p1.gaussianFilter(img, sigma)
-  gx, gy = p1.gradientImage(suavizado, "Sobel")
+  suavizado = gaussianFilter(img, sigma)
+  gx, gy = gradientImage(suavizado, "Sobel")
   gtotal = np.sqrt((gx**2)+(gy**2))
   em = direcciones(gx, gy)
   return em, gtotal
@@ -450,15 +449,20 @@ def umbralizacionConHisteresis(sup, tlow, thigh):
   """
   Se obtiene una imagen umbralizada a partir del resultado de aplicar
   la supresión no máxima.
-  Se aunan todos los bordes, juntando los débiles con los fuertes si están 4-conectados.
+  Se aunan todos los bordes, juntando los débiles con los fuertes si están 4/8-conectados.
   """
   m, n = sup.shape
+  # Imagen con padding para no coger puntos fuera de la imagen->puntos conectados a máximos
+  supAux = cv.copyMakeBorder(sup,1,1,1,1,cv.BORDER_CONSTANT,value=0.0)
   umbr = np.zeros((m,n), dtype='float32')
-  for i in range(m):
-    for j in range(n):
-      # Se comprueba si el valor sobrepasa el umbral o está 4-conectado a un máximo
-      if (sup[i,j]>thigh) or ((sup[i+1,j]+sup[i-1,j]+sup[i,j+1]+sup[i,j-1])>0):
-        umbr[i,j]=1.0
+  for i in range(1,m,1):
+    for j in range(1,n,1):
+      # Se comprueba si el valor sobrepasa el umbral
+      if (supAux[i,j]>thigh):
+        umbr[i-1,j-1]=1.0
+      # Sino, se comprueba si está 4-conectado a un valor que sobrepase thigh
+      elif (supAux[i,j]>tlow) and (np.any(supAux[i-1:i+2,j-1:j+2])):
+        umbr[i-1,j-1]=1.0
   return umbr
 
 
@@ -482,6 +486,8 @@ def edgeCanny(inImage, sigma, tlow, thigh):
         1. Localizar In+1(i,j) no visitado, tal que In(i,j)>thigh
         2. A patir de In(i,j) recorrer píxeles conectados.
           -> marcar puntos recorridos como visitados
+          -> ptos con magnitudes < thigh pero > tlow
+            -> comprobar si están conectados a un máximo (> thigh)
   """ 
   direcciones, magnitudes = mejora(inImage,sigma)
   supresion = suprNoMax(magnitudes, direcciones)
@@ -573,13 +579,13 @@ def main():
   # Test de HighBoost [~]
   #
   # image = read_img("./imagenes/circles.png")
-  image = read_img("./imagenes/lena.png")
+  # image = read_img("./imagenes/lena.png")
   # image = read_img("./imagenes/blur.jpg")
-  image2 = highBoost(image, 3, 'gaussian', 1)
+  # image2 = highBoost(image, 3, 'gaussian', 1)
   # image2 = highBoost(image, 1, 'gaussian', 1) # Laplaciano
   # image2 = highBoost(image, 1.5, 'median', 3)
   # show(image,adjustIntensity(image2,[],[0,1]))
-  show(image, image2)
+  # show(image, image2)
 
   ##### Operadores Morfológicos
 
@@ -587,13 +593,16 @@ def main():
   # image = read_img("./imagenes/morphology/blob.png")
   # image = read_img("./imagenes/morphology/a34.png")
   # image = read_img("./imagenes/morphology/ex.png")
+  # image = read_img("./imagenes/morphology/morph.png")
 
   #
   # Test de Erode
   #
   # SE = np.array([[1,1],[1,1]])
   # SE = np.array([[0,1,0],[0,1,0],[0,1,0]])
-  # SE = np.array([[1,1,1],[1,0,1],[1,1,1]])
+  # SE = np.array([[0,0,0],[1,1,1],[0,0,0]])
+  # SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
+  # SE = np.array([[1,1,1],[1,1,1],[1,1,1]])
   # image2 = erode(image, SE, [])
   # show(image, image2)
 
@@ -606,19 +615,30 @@ def main():
   # image2 = dilate(image, SE, [])
   # show(image, image2)
 
+  # Comprobar que (A-B)c = (Ac+B) 
+  # Erosión y dilatación como operaiones complementarias
+  # image = read_img("./imagenes/morphology/ex.png")
+  # a = image.copy()
+  # b = np.array([[0,1,0],[1,1,1],[0,1,0]])
+  # r1 = 1 - (erode(a,b,[]))
+  # r2 = dilate((1-a),b,[])
+  # show(r1, r2)
+
   #
   # Test de Opening
   #
-  # SE = [[0,1,0],[0,1,0],[0,1,0]]
-  # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
+  # image = read_img("./imagenes/morphology/ex2.png")
+  # SE = np.array([[0,1,0],[0,1,0],[0,1,0]])
+  # SE = np.array([[1,1,1],[1,1,1],[1,1,1]])
+  # SE = np.array([[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]])
   # image2 = opening(image, SE, [])
   # show(image, image2)
 
   #
   # Test de Closing
   #
-  # SE = [[0,1,0],[0,1,0],[0,1,0]]
-  # SE = [[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]
+  # SE = np.array([[0,1,0],[0,1,0],[0,1,0]])
+  # SE = np.array([[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]])
   # image2 = closing(image, SE, [])
   # show(image, image2)
 
@@ -626,12 +646,15 @@ def main():
   # Test de Fill
   #
   # image = read_img("./imagenes/morphology/closed.png")
+  # image = read_img("./imagenes/morphology/closed8.png")
   # image = read_img("./imagenes/morphology/closed44.png")
   # image = read_img("./imagenes/morphology/closed10.png")
   # image = read_img("./imagenes/morphology/closed2.png")
   # seeds = [[1,1]]
   # seeds = [[5,5]]
   # seeds = [[2,2],[8,8]]
+  # SE = np.array([[1,1,1],[1,1,1],[1,1,1]])
+  # SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
   # image2 = fill(image, seeds, [], [])
   # show(image, image2)
 
@@ -650,6 +673,9 @@ def main():
   #
   # Test de EdgeCanny
   #
+  # image = read_img("./imagenes/lena.png")
+  # image2 = edgeCanny(image, 1.5, 0.2, 0.5)
+  # show(image, image2)
 
 if __name__ == "__main__":
   main()
