@@ -3,23 +3,30 @@ import cv2 as cv
 import math
 import imutils  #Sólo se usa en show2 para poder hacer resize proporcional de las imágenes
 from skimage import data
+import matplotlib.pyplot as plt
 
 ####
 # Por consistencia se especifica que los arrays/matrices empleados
 # deben ser de tipo np.array para poder extraer sus dimensiones
 # siempre de la misma forma -> array.shape
+# igualmente se tratan las imágenes como arrays de tipo np.array.
 ####
 
 
 ############################################################
 # Dudas:
+# EqualizeIntensity -> usar .cumsum()?
+# Sobre filterImage -> eliminar padding para hacerlo más eficiente(?)
 # SEs como arrays normales o como np.array?
 # adjustIntensity en HighBoost  -> (dentro de la función?)
 #                               -> tener en cuenta A en el rango de entrada?
 # Erode con 0 en (0,0)
 # Canny: -> en la umbralización usar 4 u 8 vecindad    
 #   -> valores de umbrales para hacer testing
-# Harris en general
+# Harris en general -> factor de sensitividad k?
+#   -> usar gx y gy enteros o una vecindad para cada punto?
+#   -> como incluir sigmaI?
+#   -> return
 # GaussKernel -> 
 ############################################################
 
@@ -48,7 +55,8 @@ def show1(image):
   """
   Muestra la imagen proporcionada por pantalla.
   """
-  if (image.shape[1]>300):
+  height, width = image.shape  #Suponemos que ambas imágenes tienen el mismo tamaño (Original/Modificada)
+  if (width>300):
     image = imutils.resize(image,width=300) #Resize proporcional sólo para mostrar las imágenes
   cv.imshow("", image)
   cv.waitKey(0)
@@ -67,15 +75,6 @@ def show(img1, img2):
   cv.imshow("", pack)
   cv.waitKey(0)
   cv.destroyAllWindows()
-
-# def showFull(img1, img2):
-#   """
-#   Muestra dos imágenes con cualquier dimensión.
-#   """
-#   pack = np.concatenate((img1, img2), axis=1)
-#   cv.imshow("", pack)
-#   cv.waitKey(0)
-#   cv.destroyAllWindows()
 
 def umbr(image, thres):
   """
@@ -121,7 +120,8 @@ def equalizeIntensity(inImage, nBins=256):  # [1]
       i=i+1
     hist[i-1] = hist[i-1]+1
   cdf = hist.cumsum()
-  c_norm = cdf * hist.max() / cdf.max()
+  # c_norm = cdf * hist.max() / cdf.max()
+  c_norm = cdf - cdf[cdf>0].min() / cdf.max()
   outImage = np.interp(inImage, binsAux[:-1], c_norm)
   outImage = adjustIntensity(outImage,[],[0,1])
   return outImage
@@ -241,7 +241,7 @@ def erode(inImage, SE, center=[]):
   m, n = inImage.shape
   p, q = SE.shape
   outImage = np.zeros((m,n), dtype='float32')
-  padH, padV = p//2, q//2
+  padH, padV = math.floor(p/2), math.floor(q/2)
   if center==[]:
     center=[padH, padV]
   pad = cv.copyMakeBorder(inImage, padH, padH, padV, padV, cv.BORDER_CONSTANT)
@@ -272,7 +272,7 @@ def dilate(inImage, SE, center=[]):
   m, n = inImage.shape
   p, q = SE.shape
   outImage = np.zeros((m,n), dtype='float32')
-  padH, padV = p//2, q//2
+  padH, padV = math.floor(p/2), math.floor(q/2)
   if center==[]:
     center=[padH, padV]
   pad = cv.copyMakeBorder(inImage, padH, padH, padV, padV, cv.BORDER_CONSTANT)
@@ -287,8 +287,8 @@ def dilate(inImage, SE, center=[]):
       # Se comprueba que se dilata la región en torno al píxel
       for i in range(p):
         for j in range(q):
-          if window[i][j]==1 and SE[i][j]==1:
-          # if window[i][j]==1:
+          # if window[i][j]==1 and SE[i][j]==1:
+          if window[i][j]==1:
             outImage[x-padH, y-padV]=SE[i][j]
             # outImage[x-padH, y-padV]=min(window[i][j],SE[i][j])
   return outImage
@@ -345,7 +345,7 @@ def fill(inImage, seeds, SE=[], center=[]):
     SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
   m, n = inImage.shape
   p, q = SE.shape
-  a, b = p//2, q//2
+  a, b = math.floor(p/2), math.floor(q/2)
   if center == []:
     center=[a, b]
   outImage = cv.copyMakeBorder(inImage,a,a,b,b,cv.BORDER_CONSTANT, value=1)
@@ -504,7 +504,31 @@ def cornerHarris(inImage, sigmaD, sigmaI, t):
     - t: umbral de detección de esquinas.
     -> outCorners: mapa tras supresión no máxima y umbralización.
     -> harrisMap: cálculo de la métrica Harris para cada punto.
+  Proceso:
+    -> extraer Ix e Iy de la imagen (Sobel)
+    -> aplicar una gaussiana con sigmaD a Ix2, Iy2 e Ix*Iy
+    -> conformar matriz M -> obtener det(M) y aplicarle una gaussiana con sigmaI
+    -> fórmula de harris (trace = gix2+giy2, establecer un k(?))
   """
+  ix, iy = gradientImage(inImage,"Sobel")
+  # show(adjustIntensity(ix,[],[0,1]),adjustIntensity(iy,[],[0,1]))
+  ix2, iy2, ixy = ix**2, iy**2, ix*iy
+  # show(ix2, iy2)
+  # show1(adjustIntensity(ixy,[],[0,1]))
+  gix2 = gaussianFilter(ix2,sigmaD)
+  giy2 = gaussianFilter(iy2,sigmaD)
+  gixiy = gaussianFilter(ixy,sigmaD)
+  k = 0.05
+  detA = gix2*giy2 - gixiy**2 # aplicar gaussiana con sigmaI(?)
+  trace = gix2+giy2
+  response = gaussianFilter(detA,sigmaI) - k*trace**2
+  harrisMap = adjustIntensity(response,[],[0,1])
+  # Versión que umbraliza la respuesta de Harris
+  outCorners = umbr(1-harrisMap, t) #Se aplica una invesión para visualizarlo como en los ejemplos de clase
+  # show(inImage,outCorners)
+  # Versión con supresión no máxima y umbralización
+  # sup = suprNoMax(np.sqrt((ix**2)+(iy**2)),direcciones(ix,iy))
+  # outCorners = umbr(sup, t)
   return outCorners, harrisMap
 
 
@@ -522,7 +546,7 @@ def main():
 
   #
   #  Test de EqualizeIntensity [~]
-  
+  #
   # image = read_img("./imagenes/eq.jpg")
   # image2 = equalizeIntensity(image, 256)
   # show(image,image2)
@@ -676,6 +700,15 @@ def main():
   # image = read_img("./imagenes/lena.png")
   # image2 = edgeCanny(image, 1.5, 0.2, 0.5)
   # show(image, image2)
+
+  #
+  # Test de CornersHarris
+  #
+  # image = read_img("./imagenes/grid.png")
+  # cornersHarris, harrisMap = cornerHarris(image, 1.5, 0.5, 0.3)
+  # show1(cornerHarris) # Errores en la función de mostrar imágenes (np.concatenate)
+  # show(image,harrisMap)    # se decide mostrarlas separadamente
+  # show1(cornerHarris)
 
 if __name__ == "__main__":
   main()
