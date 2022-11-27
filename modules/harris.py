@@ -4,59 +4,39 @@ import sys
 sys.path.append('../')
 import p1
 
-def suprNoMax(mags, dirs):
-  """
-  Aplica supresión no máxima a los bordes de la imagen para obtener
-  bordes de 1 pixel de grosor.
-  """
-  m,n = mags.shape
-  sup = np.zeros((m,n), dtype='float32')
-  for i in range(1,m-1):
-    for j in range(1,n-1):
-      n1, n2 = 0,0
-      # Horizontal
-      if (0<dirs[i,j]<22.5 or 157.5<dirs[i,j]<180):
-        n1, n2 = mags[i,j-1], mags[i,j+1]
-      # Vertical
-      elif (67.5<dirs[i,j]<112.5):
-        n1, n2 = mags[i-1,j], mags[i+1,j]
-      # Diagonal Ascendente
-      elif (22.5<dirs[i,j]<67.5):
-        n1, n2 = mags[i+1,j+1], mags[i-1,j-1]
-      # Diagonal Descendente
-      elif (112.5<dirs[i,j]<157.5):
-        n1, n2 = mags[i+1,j-1], mags[i-1,j+1]
-      # Comprobar si es máximo
-      if (mags[i,j]>n1 and mags[i,j]>n2):
-        sup[i,j]=mags[i,j]
-  return sup
+def corners(harrisMap):
+
 
 def cornerHarris(inImage, sigmaD, sigmaI, t):
   # m, n = inImage.shape
-  gx, gy = p1.gradientImage(inImage,"Sobel")
-  gdx2 = p1.gaussianFilter(gx**2,sigmaD)
-  gdy2 = p1.gaussianFilter(gy**2,sigmaD)
-  gdxy = p1.gaussianFilter(gx*gy,sigmaD)
-  # detA = ixx * iyy - ixy**2
-  # trace = ixx + iyy
-  # response = detA - k * trace ** 2
-  harris = gdx2*gdy2 - gdxy**2 - 0.12*(gdx2+gdy2)**2
-  harris = p1.adjustIntensity(harris,[],[0,1])
-
-
-
+  ix, iy = p1.gradientImage(inImage,"Sobel")
+  # show(adjustIntensity(ix,[],[0,1]),adjustIntensity(iy,[],[0,1]))
+  ix2, iy2, ixy = ix**2, iy**2, ix*iy
+  # show(ix2, iy2)
+  # show1(adjustIntensity(ixy,[],[0,1]))
+  gix2 = p1.gaussianFilter(ix2,sigmaD)
+  giy2 = p1.gaussianFilter(iy2,sigmaD)
+  gixiy = p1.gaussianFilter(ixy,sigmaD)
+  k = 0.05
+  detA = gix2*giy2 - gixiy**2 # aplicar gaussiana con sigmaI(?)
+  trace = gix2+giy2
+  response = p1.gaussianFilter(detA,sigmaI) - k*trace**2
+  harrisMap = p1.adjustIntensity(response,[],[0,1])
+  sup = p1.suprNoMax(np.sqrt((ix**2)+(iy**2)),p1.direcciones(ix,iy))
+  # outCorners = p1.umbr(1-harrisMap, t)
+  outCorners = p1.umbr(sup, t)
+  # return outCorners, 1-harrisMap #visualización igual que en los ejemplos de clase
   return outCorners, harrisMap
 
 
 #####
 
 def main():
-  # image = p1.read_img("../imagenes/morphology/closed.png")
-  # image = p1.read_img("../imagenes/grad7.png")
-  image = p1.read_img("../imagenes/lena.png")
+  image = p1.read_img("../imagenes/grid.png")
 
-  # img = cornerHarris(image, 1.5, 0.2, 0.5)
-  # p1.show(image, img)
+  cornersHarris, harrisMap = cornerHarris(image, 1.5, 0.5, 0.4)
+  # p1.show(image, harrisMap)
+  p1.show(image, cornerHarris)
 
 if __name__ == "__main__":
   main()

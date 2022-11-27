@@ -86,7 +86,7 @@ def main():
   # image = p1.read_img("../imagenes/grad7.png")
   image = p1.read_img("../imagenes/lena.png")
 
-  img = edgeCanny(image, 1, 0.15, 0.6)
+  img = edgeCanny(image, 1, 0.15, 0.5)
   p1.show(image, img)
 
 if __name__ == "__main__":

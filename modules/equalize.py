@@ -32,46 +32,6 @@ def plotHist(inImage, outImage):
   plt.tight_layout()
   plt.show()
 
-
-def adjustIntensity(inImage, inRange=[], outRange=[0, 1]): # [2]
-  """
-  Altera el rango dinámico de la imagen.
-  - inRange = Rango de valores de intensidad de entrada.
-  - outRange = Rango de valores de intensidad de salida.
-  """
-  if inRange == []:
-    min_in = np.min(inImage)
-    max_in = np.max(inImage)
-  else :
-    min_in = inRange[0]
-    max_in = inRange[1]
-  min_out = outRange[0]
-  max_out = outRange[1]
-  # print("MinIn: ",min_in,"\tMaxIn: ",max_in,"\n\tMinOut: ",min_out,"\tMaxOut: ",max_out)
-  return min_out + (((max_out - min_out)*inImage - min_in)/(max_in - min_in))
-
-
-# def getHist(image, bins):
-#   hist = np.zeros(bins, dtype='int')
-#   binsAux = np.linspace(np.min(image), np.max(image), bins)
-#   for x in np.nditer(img):
-#     i = 0
-#     while x>binsAux[i]:
-#       i=i+1
-#     hist[i-1] = hist[i-1]+1
-#   return hist
-
-# def cumsum(hist):
-#   l = [next(hist)]
-#   for i in np.nditer(hist):
-#     l.append(l[-1]+i)
-#   return np.array(l)
-
-# def showHist(img):
-#   plt.hist()
-
-#############################
-
 def equalizeIntensity(inImage, nBins=256):
   hist = np.zeros(nBins, dtype='int')
   binsAux = np.linspace(np.min(inImage), np.max(inImage), nBins+1)
@@ -84,7 +44,7 @@ def equalizeIntensity(inImage, nBins=256):
   cdf = hist.cumsum()
   c_norm = cdf * hist.max() / cdf.max()
   outImage = np.interp(inImage, binsAux[:-1], c_norm)
-  outImage = adjustIntensity(outImage,[],[0,1])
+  outImage = p1.adjustIntensity(outImage,[],[0,1])
   return outImage
 
 #####
@@ -94,7 +54,8 @@ def main():
   # image = p1.read_img("../imagenes/circles1.png")
   image = p1.read_img("../imagenes/eq.jpg")
   image2 = equalizeIntensity(image, 256)
-  plotHist(image, image2)
+  p1.show(image, image2)
+  # plotHist(image, image2)
 
 if __name__ == "__main__":
   main()
