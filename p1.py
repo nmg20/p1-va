@@ -382,8 +382,8 @@ def gradientImage(inImage, operator):
   if operator == "Roberts":
     mx, my = np.array([[-1,0],[0,1]]), np.array([[0,-1],[1,0]])
   elif operator == "CentralDiff":
-    mx, my = a.T*d, d.T*a # Deberían ser el vector a y su transpuesta (no funciona x alguna razon)
-    mx, my = a.T*d, d.T*a # Deberían ser el vector a y su transpuesta (no funciona x alguna razon)
+    # mx, my = a.T*d, d.T*a # Deberían ser el vector a y su transpuesta (no funciona x alguna razon)
+    mx, my = a, a.T
   elif operator == "Prewitt":
     mx, my = b.T * a, a.T * b
   elif operator == "Sobel":
@@ -393,18 +393,17 @@ def gradientImage(inImage, operator):
 def direcciones(gx, gy):
   """
   Dadas dos matrices con los gradientes, registra para cada punto su dirección.
-    -> arcotangente expresada en grados.
-    -> si son ángulos negativos se devuelve su inverso (+180º)
+    -> arcotangente expresada en grados. -> multiplicada por 180 para usar grados convencionales.
+    -> si son ángulos negativos se devuelve su simétrico (+180º)
   """
   m,n = gx.shape
   d = np.zeros((m,n), dtype='float32')
   for i in range(m):
     for j in range(n):
-      d[i,j]=np.arctan2(gy[i,j],gx[i,j])*180/np.pi
+      d[i,j] = np.arctan2(gy[i,j],gx[i,j])*180/np.pi
       if d[i,j]<0:
-        d[i,j]=d[i,j]+180
+        d[i,j] = d[i,j]+180
   return d
-
 
 def mejora(img, sigma):
   """
@@ -449,22 +448,32 @@ def umbralizacionConHisteresis(sup, tlow, thigh):
   """
   Se obtiene una imagen umbralizada a partir del resultado de aplicar
   la supresión no máxima.
-  Se aunan todos los bordes, juntando los débiles con los fuertes si están 4/8-conectados.
+  Se unen todos los bordes, juntando los débiles con los fuertes si están 4/8-conectados.
   """
   m, n = sup.shape
-  # Imagen con padding para no coger puntos fuera de la imagen->puntos conectados a máximos
-  supAux = cv.copyMakeBorder(sup,1,1,1,1,cv.BORDER_CONSTANT,value=0.0)
-  umbr = np.zeros((m,n), dtype='float32')
-  for i in range(1,m,1):
-    for j in range(1,n,1):
-      # Se comprueba si el valor sobrepasa el umbral
-      if (supAux[i,j]>thigh):
-        umbr[i-1,j-1]=1.0
-      # Sino, se comprueba si está 4-conectado a un valor que sobrepase thigh
-      elif (supAux[i,j]>tlow) and (np.any(supAux[i-1:i+2,j-1:j+2])):
-        umbr[i-1,j-1]=1.0
-  return umbr
-
+  umbralizado = np.zeros((m,n), dtype='float32')
+  # Primero aplicamos una umbralización para diferenciar bordes fuertes de débiles.
+  # Marcamos los bordes fuertes con un 1.0 y los débiles con 0.5 de intensidad.
+  for i in range(m):
+    for j in range(n):
+      if (sup[i,j]>=thigh):
+        umbralizado[i,j]=1
+      elif (sup[i,j]>=tlow) and (sup[i,j]<thigh):
+        umbralizado[i,j]=0.5
+  # Aplicamos histéresis: nos quedamos con los bordes fuertes y los débiles
+  # que estén unidos a otros fuertes
+  # Se crea una copia del resultado de la umbralización con 
+  # padding para no coger puntos fuera de la imagen
+  umbralizado = cv.copyMakeBorder(umbralizado,1,1,1,1,cv.BORDER_CONSTANT,value=0.0)
+  histeresis = np.zeros((m,n), dtype='float32')
+  for i in range(m):
+    for j in range(n):
+      if (umbralizado[i,j]==1):
+        histeresis[i,j] = 1
+      elif (umbralizado[i,j]==0.5):
+        if (umbralizado[i-1:i+2,j-1:j+1].sum()>0):
+          histeresis[i,j] = 1
+  return histeresis
 
 def edgeCanny(inImage, sigma, tlow, thigh):
   """
@@ -491,7 +500,7 @@ def edgeCanny(inImage, sigma, tlow, thigh):
   """ 
   direcciones, magnitudes = mejora(inImage,sigma)
   supresion = suprNoMax(magnitudes, direcciones)
-  umbralizado = umbralizacionConHisteresis(supresion,tlow, thigh)
+  histeresis = umbralizacionConHisteresis(supresion,tlow, thigh)
   return umbralizado
 
 # Operación opcional
@@ -547,9 +556,9 @@ def main():
   #
   #  Test de EqualizeIntensity [~]
   #
-  image = read_img("./imagenes/eq.jpg")
-  image2 = equalizeIntensity(image, 256)
-  show(image,image2)
+  # image = read_img("./imagenes/eq.jpg")
+  # image2 = equalizeIntensity(image, 256)
+  # show(image,image2)
 
   #####
 
