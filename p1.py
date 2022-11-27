@@ -112,8 +112,8 @@ def equalizeIntensity(inImage, nBins=256):  # [1]
   - nBins = número de bins empleados en el procesamiento.
   """
   hist = np.zeros(nBins, dtype='int')
-  binsAux = np.linspace(np.min(inImage), np.max(inImage), nBins+1)
-  outImage = np.zeros((np.shape(inImage)),dtype='float32')
+  binsAux = np.linspace(np.min(inImage), np.max(inImage), nBins)
+  outImage = np.zeros((inImage.shape),dtype='float32')
   for x in np.nditer(inImage):
     i = 0
     while x>binsAux[i]:
@@ -122,7 +122,7 @@ def equalizeIntensity(inImage, nBins=256):  # [1]
   cdf = hist.cumsum()
   # c_norm = cdf * hist.max() / cdf.max()
   c_norm = cdf - cdf[cdf>0].min() / cdf.max()
-  outImage = np.interp(inImage, binsAux[:-1], c_norm)
+  outImage = np.interp(inImage, binsAux, c_norm)
   outImage = adjustIntensity(outImage,[],[0,1])
   return outImage
 
@@ -547,9 +547,9 @@ def main():
   #
   #  Test de EqualizeIntensity [~]
   #
-  # image = read_img("./imagenes/eq.jpg")
-  # image2 = equalizeIntensity(image, 256)
-  # show(image,image2)
+  image = read_img("./imagenes/eq.jpg")
+  image2 = equalizeIntensity(image, 256)
+  show(image,image2)
 
   #####
 
